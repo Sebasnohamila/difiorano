@@ -34,21 +34,14 @@
                         this.vid.play();
                         if (this.model) this.model.setAttribute('animation-mixer', 'timeScale: 1');
 
-                        // --- CAMBIO CLAVE PARA CENTRAR EN PANTALLA ---
-                        
-                        // 1. Buscamos la cámara
+                        // Lógica para pegar el contenido a la cámara
                         var camera = document.querySelector('[camera]');
-                        
-                        // 2. Pegamos el contenido a la cámara (ahora se moverá contigo)
                         camera.object3D.add(this.contenido.object3D);
                         
-                        // 3. Reseteamos la posición para que quede justo al frente (eje Z negativo)
-                        //    El -20 es la distancia. Si lo ves muy lejos, ponle -15. Si muy cerca, -25.
+                        // Ajustamos posición (frente a la cámara)
                         this.contenido.object3D.position.set(0, 0, -20);
                         
-                        // 4. Corregimos la rotación. 
-                        //    Como tus hijos tienen rotación -90, giramos el padre 90 (1.57 radianes) en X 
-                        //    para compensar y que queden de frente a ti.
+                        // Ajustamos rotación para que quede de frente
                         this.contenido.object3D.rotation.set(1.57, 0, 0);
 
                     }.bind(this));
@@ -59,17 +52,14 @@
                 init: function () {
                     var videoEl = document.querySelector("#vid");
                     var planeEl = this.el; 
-                    
                     var applySize = function() {
                         if (videoEl.videoWidth > 0 && videoEl.videoHeight > 0) {
                             var aspectRatio = videoEl.videoHeight / videoEl.videoWidth;
-                            // Mantengo tu escala de 8, debería verse bien a una distancia de -20
                             var scaleFactor = 8; 
                             planeEl.setAttribute('width', scaleFactor); 
                             planeEl.setAttribute('height', aspectRatio * scaleFactor);
                         }
                     };
-
                     videoEl.addEventListener('loadedmetadata', applySize);
                     if (videoEl.readyState >= 1) applySize();
                 }
@@ -90,7 +80,12 @@
             loading-screen="enabled: false;"
             arjs='sourceType: webcam; debugUIEnabled: false;'
             renderer="logarithmicDepthBuffer: true; colorManagement: true; sortObjects: true;" 
-            id="scene" embedded gesture-detector
+            id="scene" 
+            embedded 
+            gesture-detector
+            raycaster="objects: .clickable" 
+            emitevents="true"
+            cursor="fuse: false; rayOrigin: mouse;"
         >
             <a-assets>
                 <video id="vid" src="assets/asset.mp4" preload="auto" response-type="arraybuffer" loop crossorigin webkit-playsinline autoplay playsinline></video>
@@ -105,11 +100,9 @@
             <a-marker
                 type="pattern" preset="custom" url="assets/marker.patt"
                 videohandler
-                raycaster="objects: .clickable" emitevents="true"
-                cursor="fuse: false; rayOrigin: mouse;" id="markerA"
+                id="markerA"
             >
                 <a-entity id="contenedor-universal">
-                    
                     <a-video
                         src="#vid"
                         fix-video-size
@@ -133,7 +126,6 @@
                             animation-mixer="loop: repeat" 
                         ></a-entity>
                     </a-entity>
-
                 </a-entity>
             </a-marker>
         </a-scene>
