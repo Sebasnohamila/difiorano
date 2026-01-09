@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html>
     <head>
@@ -34,24 +35,15 @@
                         this.vid.play();
                         if (this.model) this.model.setAttribute('animation-mixer', 'timeScale: 1');
 
+                        // Lógica para pegar el contenido a la cámara
                         var camera = document.querySelector('[camera]');
+                        camera.object3D.add(this.contenido.object3D);
                         
-                        // 1. Mudamos el objeto a la cámara
-                        camera.appendChild(this.contenido);
+                        // Ajustamos posición (frente a la cámara)
+                        this.contenido.object3D.position.set(0, 0, -20);
                         
-                        // --- LA SOLUCIÓN MÁGICA ---
-                        // Esperamos 50ms para asegurar que el objeto ya es hijo de la cámara
-                        // antes de obligarlo a ponerse en posición.
-                        setTimeout(() => {
-                            // Posición: 4 metros al frente
-                            this.contenido.setAttribute('position', '0 0 -4');
-                            // Rotación: 0 para que mire de frente
-                            this.contenido.setAttribute('rotation', '0 0 0');
-                            // Escala: Forzamos a 1 para evitar que se haga invisible
-                            this.contenido.setAttribute('scale', '1 1 1');
-                            // Visibilidad: Aseguramos que se vea
-                            this.contenido.setAttribute('visible', 'true');
-                        }, 50);
+                        // Ajustamos rotación para que quede de frente
+                        this.contenido.object3D.rotation.set(1.57, 0, 0);
 
                     }.bind(this));
                 },
@@ -64,8 +56,7 @@
                     var applySize = function() {
                         if (videoEl.videoWidth > 0 && videoEl.videoHeight > 0) {
                             var aspectRatio = videoEl.videoHeight / videoEl.videoWidth;
-                            // Escala del video
-                            var scaleFactor = 6; 
+                            var scaleFactor = 8; 
                             planeEl.setAttribute('width', scaleFactor); 
                             planeEl.setAttribute('height', aspectRatio * scaleFactor);
                         }
@@ -93,7 +84,7 @@
             id="scene" 
             embedded 
             gesture-detector
-            raycaster="objects: .clickable; near: 0.1; far: 10000" 
+            raycaster="objects: .clickable" 
             emitevents="true"
             cursor="fuse: false; rayOrigin: mouse;"
         >
@@ -105,7 +96,7 @@
             <a-entity light="type: ambient; intensity: 1; color: #ffffff"></a-entity>
             <a-entity light="type: directional; intensity: 1.5; castShadow: false;" position="2 4 4"></a-entity>
 
-            <a-entity camera look-controls="enabled: false"></a-entity>
+            <a-entity camera></a-entity>
 
             <a-marker
                 type="pattern" preset="custom" url="assets/marker.patt"
@@ -113,42 +104,31 @@
                 id="markerA"
             >
                 <a-entity id="contenedor-universal">
-                    
                     <a-video
                         src="#vid"
                         fix-video-size
                         position="0 0 0" 
-                        rotation="0 0 0"
+                        rotation="-90 0 0"
                         material="shader: flat; src: #vid; depthWrite: false;"
                     ></a-video>
 
                     <a-entity 
                         id="rotation-container"
-                        position="0 0 0.5"
+                        position="0 0.5 1"
                         class="clickable"
-                        gesture-handler="minScale: 0.1; maxScale: 20; rotationFactor: 1;"
+                        gesture-handler="minScale: 0.25; maxScale: 10; rotationFactor: 1;"
                     >
                         <a-entity
                             id="animatedModel"
                             gltf-model="#miModelo"
                             scale="0.04 0.04 0.04"
-                            position="0 0 0" 
-                            rotation="0 0 0"
+                            position="0 0 3" 
+                            rotation="-90 0 0"
                             animation-mixer="loop: repeat" 
                         ></a-entity>
                     </a-entity>
-
                 </a-entity>
             </a-marker>
         </a-scene>
-
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                var contenido = document.querySelector("#contenedor-universal");
-                if(contenido) {
-                    contenido.setAttribute('rotation', '-90 0 0');
-                }
-            });
-        </script>
     </body>
 </html>
