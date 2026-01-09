@@ -24,6 +24,7 @@
                     var marker = this.el;
                     this.vid = document.querySelector("#vid");
                     this.model = document.querySelector("#animatedModel");
+                    // Seleccionamos el contenedor que vamos a mudar
                     this.contenido = document.querySelector("#contenedor-universal");
                     this.scanned = false; 
 
@@ -34,25 +35,22 @@
                         this.vid.play();
                         if (this.model) this.model.setAttribute('animation-mixer', 'timeScale: 1');
 
-                        // Lógica para pegar el contenido a la cámara
-                        var camera = document.querySelector('[camera]');
-                        // IMPORTANTE: Al mover el objeto a la cámara, sigue existiendo
-                        // pero visualmente ya no depende de la posición del marcador.
-                        camera.object3D.add(this.contenido.object3D);
+                        // SOLUCIÓN DEFINITIVA:
+                        // Buscamos la etiqueta de la cámara en el HTML
+                        var cameraEntity = document.querySelector('[camera]');
+
+                        // "Arrancamos" el elemento del marcador y lo pegamos DENTRO de la cámara.
+                        // Al usar appendChild, nos llevamos también el sistema de gestos y clicks.
+                        cameraEntity.appendChild(this.contenido);
                         
-                        this.contenido.object3D.position.set(0, 0, -20);
-                        this.contenido.object3D.rotation.set(1.57, 0, 0);
+                        // Ahora reajustamos la posición (relativa a la cámara)
+                        // Usamos setAttribute para que A-Frame se entere del cambio
+                        this.contenido.setAttribute('position', '0 0 -20');
+                        
+                        // Rotación en grados (90 grados en X para que quede de frente)
+                        this.contenido.setAttribute('rotation', '90 0 0');
 
                     }.bind(this));
-                },
-                // CAMBIO CLAVE: Usamos 'tock' en lugar de 'tick'.
-                // 'tock' se ejecuta al final de cada ciclo, justo antes de renderizar.
-                // Esto asegura que sobrescribimos la orden de ocultar de AR.js
-                // sin importar lo que el sistema haya hecho milisegundos antes.
-                tock: function() {
-                    if (this.scanned && this.el.object3D) {
-                        this.el.object3D.visible = true;
-                    }
                 }
             });
 
