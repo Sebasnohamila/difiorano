@@ -2,7 +2,7 @@
 <html>
     <head>
         <meta charset="utf-8">
-        <title>AR Estabilizada</title>
+        <title>AR Estable y Segura</title>
         <script src="https://aframe.io/releases/1.0.4/aframe.min.js"></script>
         <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
         <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
@@ -19,16 +19,15 @@
         </style>
 
         <script>
-            // COMPONENTE 1: Ajustar tamaño del video automáticamente
+            // 1. AJUSTE DE VIDEO
             AFRAME.registerComponent('fix-video-size', {
                 init: function () {
                     var videoEl = document.querySelector("#vid");
                     var planeEl = this.el;
-                    
                     var applySize = function() {
                         if (videoEl.videoWidth > 0 && videoEl.videoHeight > 0) {
                             var aspectRatio = videoEl.videoHeight / videoEl.videoWidth;
-                            var scaleFactor = 8; // Tu factor de escala
+                            var scaleFactor = 8; 
                             planeEl.setAttribute('width', scaleFactor);
                             planeEl.setAttribute('height', aspectRatio * scaleFactor);
                         }
@@ -38,56 +37,65 @@
                 }
             });
 
-            // COMPONENTE 2: ESTABILIZADOR (Anti-Vibración y Persistencia)
+            // 2. ESTABILIZADOR CON RETRASO (SOLUCIÓN AL ERROR)
             AFRAME.registerComponent('stay-visible', {
                 init: function () {
-                    this.hasAppeared = false;
+                    this.isLocked = false;
                     this.marker = this.el;
-                    // El contenedor que tiene dentro el video y el modelo
                     this.content = document.querySelector("#content-container");
                     this.video = document.querySelector("#vid");
                     this.model = document.querySelector("#animatedModel");
 
                     this.marker.addEventListener('markerFound', () => {
-                        if (!this.hasAppeared) {
-                            this.hasAppeared = true;
+                        // Si ya lo bloqueamos, no hacemos nada más
+                        if (this.isLocked) return;
 
-                            // 1. Hacemos visible el contenido
-                            this.content.setAttribute('visible', 'true');
+                        // 1. Mostramos el contenido inmediatamente para que el usuario lo vea
+                        this.content.setAttribute('visible', 'true');
+                        this.video.play();
+                        if(this.model) this.model.setAttribute('animation-mixer', 'timeScale: 1');
 
-                            // 2. Reproducimos video y animación
-                            this.video.play();
-                            if(this.model) this.model.setAttribute('animation-mixer', 'timeScale: 1');
-
-                            // 3. CAPTURAR POSICIÓN EXACTA
-                            var position = new THREE.Vector3();
-                            var quaternion = new THREE.Quaternion();
-                            var scale = new THREE.Vector3();
+                        // 2. ESPERAMOS 2 SEGUNDOS antes de congelarlo
+                        // Esto evita que salga volando si la cámara aún se está ajustando
+                        setTimeout(() => {
+                            if (this.isLocked) return; // Chequeo doble de seguridad
                             
-                            this.content.object3D.getWorldPosition(position);
-                            this.content.object3D.getWorldQuaternion(quaternion);
-                            this.content.object3D.getWorldScale(scale);
-
-                            // 4. DESVINCULAR DEL MARCADOR (Lo movemos a la escena principal)
-                            var scene = document.querySelector('a-scene');
-                            scene.appendChild(this.content);
-
-                            // 5. APLICAR LA POSICIÓN GUARDADA (Se queda quieto como estatua)
-                            this.content.object3D.position.copy(position);
-                            this.content.object3D.quaternion.copy(quaternion);
-                            this.content.object3D.scale.copy(scale);
-                            
-                            console.log("Modelo estabilizado y desvinculado del marcador.");
-                        }
+                            // Verificamos si el marcador sigue visible antes de congelar
+                            if (this.marker.object3D.visible) {
+                                this.lockPosition();
+                            }
+                        }, 2000); // 2000 milisegundos = 2 segundos
                     });
+                },
+
+                lockPosition: function() {
+                    this.isLocked = true;
+
+                    // Capturamos la posición, rotación y escala EXACTAS en este momento
+                    var position = new THREE.Vector3();
+                    var quaternion = new THREE.Quaternion();
+                    var scale = new THREE.Vector3();
+                    
+                    this.content.object3D.getWorldPosition(position);
+                    this.content.object3D.getWorldQuaternion(quaternion);
+                    this.content.object3D.getWorldScale(scale);
+
+                    // Desvinculamos del marcador y pegamos en la escena
+                    var scene = document.querySelector('a-scene');
+                    scene.appendChild(this.content);
+
+                    // Re-aplicamos las coordenadas mundiales para que no se mueva ni un milímetro
+                    this.content.object3D.position.copy(position);
+                    this.content.object3D.quaternion.copy(quaternion);
+                    this.content.object3D.scale.copy(scale);
+
+                    console.log("¡Posición bloqueada con éxito!");
                 }
             });
 
-            // Ocultar pantalla de carga cuando AR.js esté listo
             window.addEventListener('arjs-video-loaded', function(e) {
                 setTimeout(() => { document.body.classList.add('arjs-ready'); }, 1000);
             });
-            // Click en pantalla para asegurar que el audio/video suene (política de navegadores)
             window.addEventListener('click', function () {
                 var v = document.querySelector("#vid");
                 if(v) v.play();
