@@ -1,10 +1,10 @@
 <!doctype html>
 <html>
     <head>
+        <meta charset="utf-8">
+        <title>AR Estabilizada</title>
         <script src="https://aframe.io/releases/1.0.4/aframe.min.js"></script>
         <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
-        <script src="https://raw.githack.com/AR-js-org/studio-backend/master/src/modules/marker/tools/gesture-detector.js"></script>
-        <script src="https://raw.githack.com/AR-js-org/studio-backend/master/src/modules/marker/tools/gesture-handler.js"></script>
         <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
 
         <style>
@@ -19,49 +19,79 @@
         </style>
 
         <script>
-            AFRAME.registerComponent('videohandler', {
-                init: function () {
-                    var marker = this.el;
-                    this.vid = document.querySelector("#vid");
-                    this.model = document.querySelector("#animatedModel"); 
-
-                    marker.addEventListener('markerFound', function () {
-                        this.toggle = true;
-                        this.vid.play();
-                        if (this.model) this.model.setAttribute('animation-mixer', 'timeScale: 1');
-                    }.bind(this));
-
-                    marker.addEventListener('markerLost', function () {
-                        this.toggle = false;
-                        this.vid.pause();
-                        if (this.model) this.model.setAttribute('animation-mixer', 'timeScale: 0');
-                    }.bind(this));
-                },
-            });
-
+            // COMPONENTE 1: Ajustar tamaño del video automáticamente
             AFRAME.registerComponent('fix-video-size', {
                 init: function () {
                     var videoEl = document.querySelector("#vid");
-                    var planeEl = this.el; 
+                    var planeEl = this.el;
                     
                     var applySize = function() {
                         if (videoEl.videoWidth > 0 && videoEl.videoHeight > 0) {
                             var aspectRatio = videoEl.videoHeight / videoEl.videoWidth;
-                            var scaleFactor = 8; 
-                            planeEl.setAttribute('width', scaleFactor); 
+                            var scaleFactor = 8; // Tu factor de escala
+                            planeEl.setAttribute('width', scaleFactor);
                             planeEl.setAttribute('height', aspectRatio * scaleFactor);
                         }
                     };
-
                     videoEl.addEventListener('loadedmetadata', applySize);
                     if (videoEl.readyState >= 1) applySize();
                 }
             });
 
+            // COMPONENTE 2: ESTABILIZADOR (Anti-Vibración y Persistencia)
+            AFRAME.registerComponent('stay-visible', {
+                init: function () {
+                    this.hasAppeared = false;
+                    this.marker = this.el;
+                    // El contenedor que tiene dentro el video y el modelo
+                    this.content = document.querySelector("#content-container");
+                    this.video = document.querySelector("#vid");
+                    this.model = document.querySelector("#animatedModel");
+
+                    this.marker.addEventListener('markerFound', () => {
+                        if (!this.hasAppeared) {
+                            this.hasAppeared = true;
+
+                            // 1. Hacemos visible el contenido
+                            this.content.setAttribute('visible', 'true');
+
+                            // 2. Reproducimos video y animación
+                            this.video.play();
+                            if(this.model) this.model.setAttribute('animation-mixer', 'timeScale: 1');
+
+                            // 3. CAPTURAR POSICIÓN EXACTA
+                            var position = new THREE.Vector3();
+                            var quaternion = new THREE.Quaternion();
+                            var scale = new THREE.Vector3();
+                            
+                            this.content.object3D.getWorldPosition(position);
+                            this.content.object3D.getWorldQuaternion(quaternion);
+                            this.content.object3D.getWorldScale(scale);
+
+                            // 4. DESVINCULAR DEL MARCADOR (Lo movemos a la escena principal)
+                            var scene = document.querySelector('a-scene');
+                            scene.appendChild(this.content);
+
+                            // 5. APLICAR LA POSICIÓN GUARDADA (Se queda quieto como estatua)
+                            this.content.object3D.position.copy(position);
+                            this.content.object3D.quaternion.copy(quaternion);
+                            this.content.object3D.scale.copy(scale);
+                            
+                            console.log("Modelo estabilizado y desvinculado del marcador.");
+                        }
+                    });
+                }
+            });
+
+            // Ocultar pantalla de carga cuando AR.js esté listo
             window.addEventListener('arjs-video-loaded', function(e) {
                 setTimeout(() => { document.body.classList.add('arjs-ready'); }, 1000);
             });
-            setTimeout(() => { document.body.classList.add('arjs-ready'); }, 15000);
+            // Click en pantalla para asegurar que el audio/video suene (política de navegadores)
+            window.addEventListener('click', function () {
+                var v = document.querySelector("#vid");
+                if(v) v.play();
+            });
         </script>
     </head>
 
@@ -71,53 +101,48 @@
         <a-scene
             vr-mode-ui="enabled: false"
             loading-screen="enabled: false;"
-            arjs='sourceType: webcam; debugUIEnabled: false; sourceWidth:1280; sourceHeight:960; displayWidth: 1280; displayHeight: 960;'
-            renderer="logarithmicDepthBuffer: true; colorManagement: true; sortObjects: true;" 
-            id="scene" embedded gesture-detector
-        >
+            arjs='sourceType: webcam; debugUIEnabled: false;'
+            renderer="logarithmicDepthBuffer: true; colorManagement: true; sortObjects: true;"
+            id="scene" embedded>
+            
             <a-assets>
-                <video id="vid" src="assets/asset.mp4" preload="auto" response-type="arraybuffer" loop crossorigin webkit-playsinline autoplay playsinline></video>
+                <video id="vid" src="assets/asset.mp4" preload="auto" loop crossorigin webkit-playsinline autoplay playsinline></video>
                 <a-asset-item id="miModelo" src="assets/mi-modelo.glb"></a-asset-item>
             </a-assets>
 
             <a-entity light="type: ambient; intensity: 1; color: #ffffff"></a-entity>
             <a-entity light="type: directional; intensity: 1.5; castShadow: false;" position="2 4 4"></a-entity>
 
-            <a-marker
-                type="pattern" preset="custom" url="assets/marker.patt"
-                videohandler 
-                smooth="true" 
-                smoothCount="25" 
-                smoothTolerance="0.005" 
-                smoothThreshold="2"
-                raycaster="objects: .clickable" emitevents="true"
-                cursor="fuse: false; rayOrigin: mouse;" id="markerA"
-            >
-                <a-video
-                    src="#vid"
-                    fix-video-size
-                    position="0 0 0" 
-                    rotation="-90 0 0"
-                    material="shader: flat; src: #vid; depthWrite: false;"
-                ></a-video>
+            <a-marker 
+                type="pattern" 
+                preset="custom" 
+                url="assets/marker.patt" 
+                stay-visible 
+                id="markerA"
+                emitevents="true">
 
-                <a-entity 
-                    id="rotation-container"
-                    position="0 0.5 1"
-                    class="clickable"
-                    gesture-handler="minScale: 0.25; maxScale: 10; rotationFactor: 1;"
-                >
+                <a-entity id="content-container" visible="false">
+                    
+                    <a-video
+                        src="#vid"
+                        fix-video-size
+                        position="0 0 0" 
+                        rotation="-90 0 0"
+                        material="shader: flat; src: #vid; depthWrite: false;">
+                    </a-video>
+
                     <a-entity
                         id="animatedModel"
                         gltf-model="#miModelo"
                         scale="0.04 0.04 0.04"
                         position="0 0 3" 
                         rotation="-90 0 0"
-                        animation-mixer="loop: repeat" 
-                    ></a-entity>
-                </a-entity>
+                        animation-mixer="loop: repeat; timeScale: 0">
+                    </a-entity>
 
+                </a-entity>
             </a-marker>
+
             <a-entity camera></a-entity>
         </a-scene>
     </body>
