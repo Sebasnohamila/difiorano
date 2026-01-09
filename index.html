@@ -24,7 +24,6 @@
                     var marker = this.el;
                     this.vid = document.querySelector("#vid");
                     this.model = document.querySelector("#animatedModel");
-                    // Seleccionamos el contenedor que vamos a mudar
                     this.contenido = document.querySelector("#contenedor-universal");
                     this.scanned = false; 
 
@@ -35,19 +34,19 @@
                         this.vid.play();
                         if (this.model) this.model.setAttribute('animation-mixer', 'timeScale: 1');
 
-                        // SOLUCIÓN DEFINITIVA:
-                        // Buscamos la etiqueta de la cámara en el HTML
+                        // 1. Buscamos la cámara
                         var cameraEntity = document.querySelector('[camera]');
 
-                        // "Arrancamos" el elemento del marcador y lo pegamos DENTRO de la cámara.
-                        // Al usar appendChild, nos llevamos también el sistema de gestos y clicks.
+                        // 2. Mudamos el contenido dentro de la cámara
                         cameraEntity.appendChild(this.contenido);
                         
-                        // Ahora reajustamos la posición (relativa a la cámara)
-                        // Usamos setAttribute para que A-Frame se entere del cambio
-                        this.contenido.setAttribute('position', '0 0 -20');
+                        // 3. AJUSTE CRÍTICO DE COORDENADAS:
+                        // Acercamos el objeto (estaba muy lejos en -20, lo ponemos en -4)
+                        this.contenido.setAttribute('position', '0 0 -4');
                         
-                        // Rotación en grados (90 grados en X para que quede de frente)
+                        // Rotamos 90 grados en X. 
+                        // ¿Por qué? Porque tu video interno tiene -90. 
+                        // 90 + (-90) = 0. Esto hace que el video quede "de pie" frente a ti.
                         this.contenido.setAttribute('rotation', '90 0 0');
 
                     }.bind(this));
@@ -61,7 +60,8 @@
                     var applySize = function() {
                         if (videoEl.videoWidth > 0 && videoEl.videoHeight > 0) {
                             var aspectRatio = videoEl.videoHeight / videoEl.videoWidth;
-                            var scaleFactor = 8; 
+                            // Reduje un poco la escala para que quepa bien en pantalla al estar cerca
+                            var scaleFactor = 4; 
                             planeEl.setAttribute('width', scaleFactor); 
                             planeEl.setAttribute('height', aspectRatio * scaleFactor);
                         }
