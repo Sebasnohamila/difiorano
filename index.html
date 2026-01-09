@@ -47,11 +47,7 @@
                     var applySize = function() {
                         if (videoEl.videoWidth > 0 && videoEl.videoHeight > 0) {
                             var aspectRatio = videoEl.videoHeight / videoEl.videoWidth;
-                            
-                            // CAMBIO REALIZADO AQUÍ:
-                            // Pasamos de 2 a 4 para duplicar el tamaño actual.
                             var scaleFactor = 8; 
-
                             planeEl.setAttribute('width', scaleFactor); 
                             planeEl.setAttribute('height', aspectRatio * scaleFactor);
                         }
@@ -75,7 +71,7 @@
         <a-scene
             vr-mode-ui="enabled: false"
             loading-screen="enabled: false;"
-            arjs='sourceType: webcam; debugUIEnabled: false;'
+            arjs='sourceType: webcam; debugUIEnabled: false; sourceWidth:1280; sourceHeight:960; displayWidth: 1280; displayHeight: 960;'
             renderer="logarithmicDepthBuffer: true; colorManagement: true; sortObjects: true;" 
             id="scene" embedded gesture-detector
         >
@@ -89,7 +85,11 @@
 
             <a-marker
                 type="pattern" preset="custom" url="assets/marker.patt"
-                videohandler smooth="true" smoothCount="10" smoothTolerance="0.01" smoothThreshold="5"
+                videohandler 
+                smooth="true" 
+                smoothCount="25" 
+                smoothTolerance="0.005" 
+                smoothThreshold="2"
                 raycaster="objects: .clickable" emitevents="true"
                 cursor="fuse: false; rayOrigin: mouse;" id="markerA"
             >
