@@ -25,6 +25,10 @@
                     this.vid = document.querySelector("#vid");
                     this.model = document.querySelector("#animatedModel");
                     this.contenido = document.querySelector("#contenedor-universal");
+                    // Referencias directas a los elementos internos para resetearlos
+                    this.videoPantalla = document.querySelector("#video-pantalla");
+                    this.modeloContainer = document.querySelector("#rotation-container");
+                    
                     this.scanned = false; 
 
                     marker.addEventListener('markerFound', function () {
@@ -34,20 +38,27 @@
                         this.vid.play();
                         if (this.model) this.model.setAttribute('animation-mixer', 'timeScale: 1');
 
-                        // 1. Buscamos la cámara
+                        // 1. MUDANZA: Mover todo el bloque HTML a la cámara
                         var cameraEntity = document.querySelector('[camera]');
-
-                        // 2. Mudamos el contenido dentro de la cámara
                         cameraEntity.appendChild(this.contenido);
                         
-                        // 3. AJUSTE CRÍTICO DE COORDENADAS:
-                        // Acercamos el objeto (estaba muy lejos en -20, lo ponemos en -4)
-                        this.contenido.setAttribute('position', '0 0 -4');
+                        // 2. POSICIÓN: Lo ponemos frente a la cámara (Z -5 es una distancia segura)
+                        this.contenido.setAttribute('position', '0 0 -5');
                         
-                        // Rotamos 90 grados en X. 
-                        // ¿Por qué? Porque tu video interno tiene -90. 
-                        // 90 + (-90) = 0. Esto hace que el video quede "de pie" frente a ti.
-                        this.contenido.setAttribute('rotation', '90 0 0');
+                        // 3. RESET TOTAL DE ROTACIÓN:
+                        // Quitamos todas las rotaciones extrañas (-90, etc) para que mire al frente
+                        this.contenido.setAttribute('rotation', '0 0 0');
+                        this.videoPantalla.setAttribute('rotation', '0 0 0'); 
+                        this.modeloContainer.setAttribute('rotation', '0 0 0'); 
+                        
+                        // 4. RESET DEL MODELO:
+                        // Dependiendo de cómo venga tu modelo GLB, a veces necesitan 
+                        // un ajuste. Si sale acostado, cambia este '0 0 0' por '-90 0 0' o '90 0 0'.
+                        // Por ahora lo dejamos en 0 para asegurar visibilidad.
+                        this.model.setAttribute('rotation', '0 0 0');
+
+                        // 5. Visibilidad forzada
+                        this.contenido.setAttribute('visible', true);
 
                     }.bind(this));
                 }
@@ -60,14 +71,16 @@
                     var applySize = function() {
                         if (videoEl.videoWidth > 0 && videoEl.videoHeight > 0) {
                             var aspectRatio = videoEl.videoHeight / videoEl.videoWidth;
-                            // Reduje un poco la escala para que quepa bien en pantalla al estar cerca
-                            var scaleFactor = 4; 
+                            // Escala ajustada para modo pantalla (HUD)
+                            var scaleFactor = 3; 
                             planeEl.setAttribute('width', scaleFactor); 
                             planeEl.setAttribute('height', aspectRatio * scaleFactor);
                         }
                     };
                     videoEl.addEventListener('loadedmetadata', applySize);
+                    // Si ya cargó, aplicamos. Y si nos movemos a la cámara, re-aplicamos por si acaso.
                     if (videoEl.readyState >= 1) applySize();
+                    planeEl.sceneEl.addEventListener('markerFound', () => setTimeout(applySize, 100));
                 }
             });
 
@@ -109,7 +122,9 @@
                 id="markerA"
             >
                 <a-entity id="contenedor-universal">
+                    
                     <a-video
+                        id="video-pantalla"
                         src="#vid"
                         fix-video-size
                         position="0 0 0" 
@@ -119,7 +134,7 @@
 
                     <a-entity 
                         id="rotation-container"
-                        position="0 0.5 1"
+                        position="0 0 1"
                         class="clickable"
                         gesture-handler="minScale: 0.25; maxScale: 10; rotationFactor: 1;"
                     >
@@ -127,7 +142,7 @@
                             id="animatedModel"
                             gltf-model="#miModelo"
                             scale="0.04 0.04 0.04"
-                            position="0 0 3" 
+                            position="0 0 2" 
                             rotation="-90 0 0"
                             animation-mixer="loop: repeat" 
                         ></a-entity>
