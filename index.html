@@ -1,247 +1,133 @@
 <!doctype html>
-
 <html>
-
     <head>
-
         <script src="https://aframe.io/releases/1.0.4/aframe.min.js"></script>
-
         <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
-
         <script src="https://raw.githack.com/AR-js-org/studio-backend/master/src/modules/marker/tools/gesture-detector.js"></script>
-
         <script src="https://raw.githack.com/AR-js-org/studio-backend/master/src/modules/marker/tools/gesture-handler.js"></script>
-
         <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
 
-
-
         <style>
-
             #splash-screen {
-
                 position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-
                 background-color: white; z-index: 9999;
-
                 display: flex; justify-content: center; align-items: center;
-
                 transition: opacity 1s ease-out;
-
             }
-
             #splash-screen img { max-width: 60%; height: auto; }
-
             .arjs-ready #splash-screen { opacity: 0; pointer-events: none; }
-
         </style>
 
-
-
         <script>
-
             AFRAME.registerComponent('videohandler', {
-
                 init: function () {
-
                     var marker = this.el;
-
                     this.vid = document.querySelector("#vid");
-
-                    this.model = document.querySelector("#animatedModel"); 
-
-
+                    this.model = document.querySelector("#animatedModel");
+                    // Seleccionamos el contenedor que agrupa todo
+                    this.contenido = document.querySelector("#contenedor-universal");
+                    this.scanned = false; // Bandera para saber si ya se escaneó una vez
 
                     marker.addEventListener('markerFound', function () {
-
-                        this.toggle = true;
-
+                        // Si ya se escaneó una vez, no hacemos nada (evita reinicios)
+                        if (this.scanned) return; 
+                        
+                        this.scanned = true; // Marcamos como escaneado
                         this.vid.play();
-
                         if (this.model) this.model.setAttribute('animation-mixer', 'timeScale: 1');
 
-                    }.bind(this));
-
-
-
-                    marker.addEventListener('markerLost', function () {
-
-                        this.toggle = false;
-
-                        this.vid.pause();
-
-                        if (this.model) this.model.setAttribute('animation-mixer', 'timeScale: 0');
+                        // TRUCO DE MAGIA:
+                        // "Arrancamos" el contenido del marcador y lo pegamos a la escena principal.
+                        // Usamos 'attach' de Three.js para mantener su posición exacta en el mundo 3D
+                        // sin que se mueva más con el marcador.
+                        var scene = document.querySelector('a-scene');
+                        scene.object3D.attach(this.contenido.object3D);
 
                     }.bind(this));
 
+                    // HEMOS ELIMINADO EL EVENTO 'markerLost' PARA QUE NO SE PAUSE NI DESAPAREZCA
                 },
-
             });
-
-
 
             AFRAME.registerComponent('fix-video-size', {
-
                 init: function () {
-
                     var videoEl = document.querySelector("#vid");
-
                     var planeEl = this.el; 
-
                     
-
                     var applySize = function() {
-
                         if (videoEl.videoWidth > 0 && videoEl.videoHeight > 0) {
-
                             var aspectRatio = videoEl.videoHeight / videoEl.videoWidth;
-
-                            
-
-                            // CAMBIO REALIZADO AQUÍ:
-
-                            // Pasamos de 2 a 4 para duplicar el tamaño actual.
-
                             var scaleFactor = 8; 
-
-
-
                             planeEl.setAttribute('width', scaleFactor); 
-
                             planeEl.setAttribute('height', aspectRatio * scaleFactor);
-
                         }
-
                     };
 
-
-
                     videoEl.addEventListener('loadedmetadata', applySize);
-
                     if (videoEl.readyState >= 1) applySize();
-
                 }
-
             });
-
-
 
             window.addEventListener('arjs-video-loaded', function(e) {
-
                 setTimeout(() => { document.body.classList.add('arjs-ready'); }, 1000);
-
             });
-
             setTimeout(() => { document.body.classList.add('arjs-ready'); }, 15000);
-
         </script>
-
     </head>
 
-
-
     <body style="margin: 0; overflow: hidden;">
-
         <div id="splash-screen"><img src="assets/logo.png" alt="Cargando..."></div>
 
-
-
         <a-scene
-
             vr-mode-ui="enabled: false"
-
             loading-screen="enabled: false;"
-
             arjs='sourceType: webcam; debugUIEnabled: false;'
-
             renderer="logarithmicDepthBuffer: true; colorManagement: true; sortObjects: true;" 
-
             id="scene" embedded gesture-detector
-
         >
-
             <a-assets>
-
                 <video id="vid" src="assets/asset.mp4" preload="auto" response-type="arraybuffer" loop crossorigin webkit-playsinline autoplay playsinline></video>
-
                 <a-asset-item id="miModelo" src="assets/mi-modelo.glb"></a-asset-item>
-
             </a-assets>
 
-
-
             <a-entity light="type: ambient; intensity: 1; color: #ffffff"></a-entity>
-
             <a-entity light="type: directional; intensity: 1.5; castShadow: false;" position="2 4 4"></a-entity>
 
-
-
             <a-marker
-
                 type="pattern" preset="custom" url="assets/marker.patt"
-
-                videohandler smooth="true" smoothCount="10" smoothTolerance="0.01" smoothThreshold="5"
-
+                videohandler
                 raycaster="objects: .clickable" emitevents="true"
-
                 cursor="fuse: false; rayOrigin: mouse;" id="markerA"
-
             >
-
-                <a-video
-
-                    src="#vid"
-
-                    fix-video-size
-
-                    position="0 0 0" 
-
-                    rotation="-90 0 0"
-
-                    material="shader: flat; src: #vid; depthWrite: false;"
-
-                ></a-video>
-
-
-
-                <a-entity 
-
-                    id="rotation-container"
-
-                    position="0 0.5 1"
-
-                    class="clickable"
-
-                    gesture-handler="minScale: 0.25; maxScale: 10; rotationFactor: 1;"
-
-                >
-
-                    <a-entity
-
-                        id="animatedModel"
-
-                        gltf-model="#miModelo"
-
-                        scale="0.04 0.04 0.04"
-
-                        position="0 0 3" 
-
+                <a-entity id="contenedor-universal">
+                    
+                    <a-video
+                        src="#vid"
+                        fix-video-size
+                        position="0 0 0" 
                         rotation="-90 0 0"
+                        material="shader: flat; src: #vid; depthWrite: false;"
+                    ></a-video>
 
-                        animation-mixer="loop: repeat" 
-
-                    ></a-entity>
+                    <a-entity 
+                        id="rotation-container"
+                        position="0 0.5 1"
+                        class="clickable"
+                        gesture-handler="minScale: 0.25; maxScale: 10; rotationFactor: 1;"
+                    >
+                        <a-entity
+                            id="animatedModel"
+                            gltf-model="#miModelo"
+                            scale="0.04 0.04 0.04"
+                            position="0 0 3" 
+                            rotation="-90 0 0"
+                            animation-mixer="loop: repeat" 
+                        ></a-entity>
+                    </a-entity>
 
                 </a-entity>
-
-
-
-            </a-marker>
-
+                </a-marker>
             <a-entity camera></a-entity>
-
         </a-scene>
-
     </body>
-
 </html>
