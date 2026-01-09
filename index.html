@@ -36,23 +36,22 @@
 
                         var camera = document.querySelector('[camera]');
                         
-                        // 1. Mudamos el contenedor a la cámara
+                        // 1. Mudamos el objeto a la cámara
                         camera.appendChild(this.contenido);
                         
-                        // --- CORRECCIONES DE VISIBILIDAD ---
-                        
-                        // POSICIÓN: Lo acercamos más (z: -5 era lejos, -4 es mejor)
-                        this.contenido.setAttribute('position', '0 0 -4');
-                        
-                        // ROTACIÓN: IMPORTANTE. Lo ponemos en 0 0 0 para que te mire de frente.
-                        // (Antes lo girábamos y quedaba invisible de perfil)
-                        this.contenido.setAttribute('rotation', '0 0 0');
-                        
-                        // ESCALA: Forzamos escala 1, por si venía muy pequeño del marcador
-                        this.contenido.setAttribute('scale', '1 1 1');
-                        
-                        // VISIBLE: Nos aseguramos de que sea visible
-                        this.contenido.setAttribute('visible', 'true');
+                        // --- LA SOLUCIÓN MÁGICA ---
+                        // Esperamos 50ms para asegurar que el objeto ya es hijo de la cámara
+                        // antes de obligarlo a ponerse en posición.
+                        setTimeout(() => {
+                            // Posición: 4 metros al frente
+                            this.contenido.setAttribute('position', '0 0 -4');
+                            // Rotación: 0 para que mire de frente
+                            this.contenido.setAttribute('rotation', '0 0 0');
+                            // Escala: Forzamos a 1 para evitar que se haga invisible
+                            this.contenido.setAttribute('scale', '1 1 1');
+                            // Visibilidad: Aseguramos que se vea
+                            this.contenido.setAttribute('visible', 'true');
+                        }, 50);
 
                     }.bind(this));
                 },
@@ -65,7 +64,7 @@
                     var applySize = function() {
                         if (videoEl.videoWidth > 0 && videoEl.videoHeight > 0) {
                             var aspectRatio = videoEl.videoHeight / videoEl.videoWidth;
-                            // Reduje un poco la escala de 8 a 6 para que quepa mejor en pantalla a distancia -4
+                            // Escala del video
                             var scaleFactor = 6; 
                             planeEl.setAttribute('width', scaleFactor); 
                             planeEl.setAttribute('height', aspectRatio * scaleFactor);
@@ -106,7 +105,7 @@
             <a-entity light="type: ambient; intensity: 1; color: #ffffff"></a-entity>
             <a-entity light="type: directional; intensity: 1.5; castShadow: false;" position="2 4 4"></a-entity>
 
-            <a-entity camera></a-entity>
+            <a-entity camera look-controls="enabled: false"></a-entity>
 
             <a-marker
                 type="pattern" preset="custom" url="assets/marker.patt"
@@ -125,7 +124,7 @@
 
                     <a-entity 
                         id="rotation-container"
-                        position="0 0.5 1"
+                        position="0 0 0.5"
                         class="clickable"
                         gesture-handler="minScale: 0.1; maxScale: 20; rotationFactor: 1;"
                     >
@@ -133,7 +132,7 @@
                             id="animatedModel"
                             gltf-model="#miModelo"
                             scale="0.04 0.04 0.04"
-                            position="0 0 0.5" 
+                            position="0 0 0" 
                             rotation="0 0 0"
                             animation-mixer="loop: repeat" 
                         ></a-entity>
@@ -142,13 +141,13 @@
                 </a-entity>
             </a-marker>
         </a-scene>
-        
+
         <script>
-            // Este pequeño script asegura que AL PRINCIPIO, el contenido esté acostado en el marcador.
-            // Cuando el 'videohandler' se active, forzará la rotación a 0 0 0 (de pie).
             document.addEventListener('DOMContentLoaded', function() {
                 var contenido = document.querySelector("#contenedor-universal");
-                contenido.setAttribute('rotation', '-90 0 0');
+                if(contenido) {
+                    contenido.setAttribute('rotation', '-90 0 0');
+                }
             });
         </script>
     </body>
