@@ -2,7 +2,8 @@
 <html>
     <head>
         <meta charset="utf-8">
-        <title>AR Final Pro</title>
+        <title>AR Estable y Siempre Activa</title>
+        
         <script src="https://aframe.io/releases/1.0.4/aframe.min.js"></script>
         <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
         <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
@@ -21,6 +22,7 @@
         </style>
 
         <script>
+            // 1. CONTROLADOR AR (Lógica de bloqueo)
             AFRAME.registerComponent('ar-controller', {
                 init: function () {
                     this.locked = false;
@@ -28,41 +30,51 @@
                     this.content = document.querySelector("#content-container");
                     this.video = document.querySelector("#vid");
                     this.model = document.querySelector("#animatedModel");
-                    this.camera = document.querySelector("[camera]"); // Referencia a la cámara
 
                     this.marker.addEventListener('markerFound', () => {
                         if (this.locked) return;
 
-                        // Esperamos 1.5s para estabilizar
+                        // Esperamos 1.5s para asegurar estabilidad
                         setTimeout(() => {
                             if (this.locked) return;
 
-                            // 1. OBTENER POSICIÓN DEL MARCADOR
+                            // Copiar posición
                             var position = new THREE.Vector3();
                             this.marker.object3D.getWorldPosition(position);
-
-                            // 2. MOVER CONTENIDO AL MARCADOR
                             this.content.object3D.position.copy(position);
 
-                            // 3. HACER QUE MIRE A LA CÁMARA ("RECTA")
-                            // Esto ignora la inclinación del marcador y encara al usuario
-                            this.content.object3D.lookAt(this.camera.object3D.position);
-
-                            // 4. ACTIVAR VISIBILIDAD
+                            // Activar contenido
                             this.content.setAttribute('visible', 'true');
+                            
+                            // Activar modo "Mirar al usuario" (Billboard)
+                            this.content.setAttribute('billboard', '');
+
+                            // Reproducir
                             this.video.play();
                             if(this.model) this.model.setAttribute('animation-mixer', 'timeScale: 1');
 
-                            // 5. BLOQUEAR (Ya no depende del marcador)
                             this.locked = true;
-                            console.log("Fijado y encarado al usuario.");
-                            
-                        }, 1500); 
+                            console.log("Sistema bloqueado y centrado.");
+                        }, 1500);
                     });
                 }
             });
 
-            // Ajuste de tamaño de video
+            // 2. COMPONENTE BILLBOARD (Mantiene el objeto mirándote SIEMPRE)
+            // Esto soluciona que deje de responder al tacto si te mueves
+            AFRAME.registerComponent('billboard', {
+                tick: function () {
+                    var camera = document.querySelector("[camera]");
+                    if (camera) {
+                        // Solo rotamos en el eje Y para que no se incline hacia el cielo/suelo raro
+                        var targetPosition = camera.object3D.position.clone();
+                        targetPosition.y = this.el.object3D.position.y; 
+                        this.el.object3D.lookAt(targetPosition);
+                    }
+                }
+            });
+
+            // 3. VIDEO SIZE
             AFRAME.registerComponent('fix-video-size', {
                 init: function () {
                     var videoEl = document.querySelector("#vid");
@@ -95,10 +107,10 @@
 
         <a-scene
             ar-controller
-            gesture-detector 
+            gesture-detector
             vr-mode-ui="enabled: false"
             loading-screen="enabled: false;"
-            arjs='sourceType: webcam; debugUIEnabled: false;'
+            arjs='sourceType: webcam; debugUIEnabled: false; detectionMode: mono; patternRatio: 0.75;'
             renderer="logarithmicDepthBuffer: true; colorManagement: true; sortObjects: true;"
             id="scene" embedded>
             
@@ -107,13 +119,16 @@
                 <a-asset-item id="miModelo" src="assets/mi-modelo.glb"></a-asset-item>
             </a-assets>
 
-            <a-entity light="type: ambient; intensity: 1; color: #ffffff"></a-entity>
-            <a-entity light="type: directional; intensity: 1.5; castShadow: false;" position="2 4 4"></a-entity>
+            <a-entity light="type: ambient; intensity: 1.2; color: #ffffff"></a-entity>
+            <a-entity light="type: directional; intensity: 2; position: 2 4 4"></a-entity>
 
             <a-marker type="pattern" preset="custom" url="assets/marker.patt" id="markerA"></a-marker>
 
-            <a-entity camera>
-                <a-entity cursor="fuse: false; rayOrigin: mouse;" raycaster="objects: .clickable"></a-entity>
+            <a-entity camera position="0 0 0">
+                <a-entity 
+                    cursor="fuse: false; rayOrigin: mouse;" 
+                    raycaster="objects: .clickable; far: 10000; interval: 100;">
+                </a-entity>
             </a-entity>
 
             <a-entity id="content-container" visible="false">
@@ -122,14 +137,17 @@
                     src="#vid"
                     fix-video-size
                     position="0 0 0"
-                    material="shader: flat; src: #vid; depthWrite: false;">
+                    rotation="0 180 0" 
+                    material="shader: flat; src: #vid; depthWrite: false; side: double;">
                 </a-video>
 
                 <a-entity 
                     id="model-wrapper" 
                     class="clickable" 
                     gesture-handler="minScale: 0.25; maxScale: 10; rotationFactor: 1;"
-                    position="0 0 2"> <a-entity
+                    position="0 0 2"> 
+                    
+                    <a-entity
                         id="animatedModel"
                         gltf-model="#miModelo"
                         scale="0.04 0.04 0.04"
