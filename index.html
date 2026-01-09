@@ -1,0 +1,100 @@
+<!doctype html>
+<html>
+<head>
+    <script src="https://aframe.io/releases/1.0.4/aframe.min.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/studio-backend/master/src/modules/marker/tools/gesture-detector.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/studio-backend/master/src/modules/marker/tools/gesture-handler.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: black;
+        }
+
+        #splash-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: white; z-index: 9999;
+            display: flex; justify-content: center; align-items: center;
+            transition: opacity 1s ease-out;
+        }
+        #splash-screen img { max-width: 60%; height: auto; }
+        .arjs-ready #splash-screen { opacity: 0; pointer-events: none; }
+
+        /* --- VIDEO FULL SCREEN ABSOLUTO --- */
+        #fullScreenVideo {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            
+            /* 'cover': El video hará zoom para llenar toda la pantalla. 
+               No habrá bordes negros, pero se recortará un poco la imagen si las proporciones no coinciden. */
+            object-fit: cover;
+            
+            /* Z-index muy alto para tapar la cámara y el modelo 3D */
+            z-index: 20000; 
+        }
+
+        /* Opcional: Ocultar el botón de VR que pone A-Frame a veces */
+        .a-enter-vr-button {
+            display: none;
+        }
+    </style>
+
+    <script>
+        AFRAME.registerComponent('videohandler', {
+            init: function () {
+                var marker = this.el;
+                this.vid = document.querySelector("#fullScreenVideo");
+
+                marker.addEventListener('markerFound', function () {
+                    this.vid.style.display = 'block';
+                    // Reproducimos el video (debe estar muted para autoplay seguro)
+                    this.vid.play().catch(e => console.log("Error play:", e));
+                }.bind(this));
+
+                marker.addEventListener('markerLost', function () {
+                    // Si quieres que el video desaparezca al perder el marker, descomenta la linea de abajo:
+                    // this.vid.style.display = 'none';
+                }.bind(this));
+            },
+        });
+
+        window.addEventListener('arjs-video-loaded', function(e) {
+            setTimeout(() => { document.body.classList.add('arjs-ready'); }, 1000);
+        });
+    </script>
+</head>
+
+<body>
+    <div id="splash-screen"><img src="assets/logo.png" alt="Cargando..."></div>
+
+    <video
+        id="fullScreenVideo"
+        src="assets/asset.mp4"
+        loop
+        playsinline
+        webkit-playsinline
+        muted
+        crossorigin="anonymous">
+    </video>
+
+    <a-scene
+        vr-mode-ui="enabled: false"
+        loading-screen="enabled: false;"
+        arjs='sourceType: webcam; debugUIEnabled: false;'
+        renderer="logarithmicDepthBuffer: true; colorManagement: true; sortObjects: true;"
+        id="scene" embedded gesture-detector
+    >
+        <a-marker type="pattern" preset="custom" url="assets/marker.patt" videohandler id="markerA">
+        </a-marker>
+
+        <a-entity camera></a-entity>
+    </a-scene>
+</body>
+</html>
