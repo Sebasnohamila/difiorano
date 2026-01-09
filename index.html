@@ -1,100 +1,245 @@
 <!doctype html>
+
 <html>
-<head>
-    <script src="https://aframe.io/releases/1.0.4/aframe.min.js"></script>
-    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
-    <script src="https://raw.githack.com/AR-js-org/studio-backend/master/src/modules/marker/tools/gesture-detector.js"></script>
-    <script src="https://raw.githack.com/AR-js-org/studio-backend/master/src/modules/marker/tools/gesture-handler.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
 
-    <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            background-color: black;
-        }
+    <head>
 
-        #splash-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: white; z-index: 9999;
-            display: flex; justify-content: center; align-items: center;
-            transition: opacity 1s ease-out;
-        }
-        #splash-screen img { max-width: 60%; height: auto; }
-        .arjs-ready #splash-screen { opacity: 0; pointer-events: none; }
+        <script src="https://aframe.io/releases/1.0.4/aframe.min.js"></script>
 
-        /* --- VIDEO FULL SCREEN ABSOLUTO --- */
-        #fullScreenVideo {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            
-            /* 'cover': El video hará zoom para llenar toda la pantalla. 
-               No habrá bordes negros, pero se recortará un poco la imagen si las proporciones no coinciden. */
-            object-fit: cover;
-            
-            /* Z-index muy alto para tapar la cámara y el modelo 3D */
-            z-index: 20000; 
-        }
+        <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
 
-        /* Opcional: Ocultar el botón de VR que pone A-Frame a veces */
-        .a-enter-vr-button {
-            display: none;
-        }
-    </style>
+        <script src="https://raw.githack.com/AR-js-org/studio-backend/master/src/modules/marker/tools/gesture-detector.js"></script>
 
-    <script>
-        AFRAME.registerComponent('videohandler', {
-            init: function () {
-                var marker = this.el;
-                this.vid = document.querySelector("#fullScreenVideo");
+        <script src="https://raw.githack.com/AR-js-org/studio-backend/master/src/modules/marker/tools/gesture-handler.js"></script>
 
-                marker.addEventListener('markerFound', function () {
-                    this.vid.style.display = 'block';
-                    // Reproducimos el video (debe estar muted para autoplay seguro)
-                    this.vid.play().catch(e => console.log("Error play:", e));
-                }.bind(this));
+        <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
 
-                marker.addEventListener('markerLost', function () {
-                    // Si quieres que el video desaparezca al perder el marker, descomenta la linea de abajo:
-                    // this.vid.style.display = 'none';
-                }.bind(this));
-            },
-        });
 
-        window.addEventListener('arjs-video-loaded', function(e) {
-            setTimeout(() => { document.body.classList.add('arjs-ready'); }, 1000);
-        });
-    </script>
-</head>
 
-<body>
-    <div id="splash-screen"><img src="assets/logo.png" alt="Cargando..."></div>
+        <style>
 
-    <video
-        id="fullScreenVideo"
-        src="assets/asset.mp4"
-        loop
-        playsinline
-        webkit-playsinline
-        muted
-        crossorigin="anonymous">
-    </video>
+            #splash-screen {
 
-    <a-scene
-        vr-mode-ui="enabled: false"
-        loading-screen="enabled: false;"
-        arjs='sourceType: webcam; debugUIEnabled: false;'
-        renderer="logarithmicDepthBuffer: true; colorManagement: true; sortObjects: true;"
-        id="scene" embedded gesture-detector
-    >
-        <a-marker type="pattern" preset="custom" url="assets/marker.patt" videohandler id="markerA">
-        </a-marker>
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
 
-        <a-entity camera></a-entity>
-    </a-scene>
-</body>
+                background-color: white; z-index: 9999;
+
+                display: flex; justify-content: center; align-items: center;
+
+                transition: opacity 1s ease-out;
+
+            }
+
+            #splash-screen img { max-width: 60%; height: auto; }
+
+            .arjs-ready #splash-screen { opacity: 0; pointer-events: none; }
+
+        </style>
+
+
+
+        <script>
+
+            AFRAME.registerComponent('videohandler', {
+
+                init: function () {
+
+                    var marker = this.el;
+
+                    this.vid = document.querySelector("#vid");
+
+                    this.model = document.querySelector("#animatedModel"); 
+
+
+
+                    marker.addEventListener('markerFound', function () {
+
+                        this.toggle = true;
+
+                        this.vid.play();
+
+                        if (this.model) this.model.setAttribute('animation-mixer', 'timeScale: 1');
+
+                    }.bind(this));
+
+
+
+                    marker.addEventListener('markerLost', function () {
+
+                        this.toggle = false;
+
+                        this.vid.pause();
+
+                        if (this.model) this.model.setAttribute('animation-mixer', 'timeScale: 0');
+
+                    }.bind(this));
+
+                },
+
+            });
+
+
+
+            AFRAME.registerComponent('fix-video-size', {
+
+                init: function () {
+
+                    var videoEl = document.querySelector("#vid");
+
+                    var planeEl = this.el; 
+
+                    
+
+                    var applySize = function() {
+
+                        if (videoEl.videoWidth > 0 && videoEl.videoHeight > 0) {
+
+                            var aspectRatio = videoEl.videoHeight / videoEl.videoWidth;
+
+                            
+
+                            // Mantenemos el factor de escala x2 que pediste
+
+                            var scaleFactor = 2; 
+
+
+
+                            planeEl.setAttribute('width', scaleFactor); 
+
+                            planeEl.setAttribute('height', aspectRatio * scaleFactor);
+
+                        }
+
+                    };
+
+
+
+                    videoEl.addEventListener('loadedmetadata', applySize);
+
+                    if (videoEl.readyState >= 1) applySize();
+
+                }
+
+            });
+
+
+
+            window.addEventListener('arjs-video-loaded', function(e) {
+
+                setTimeout(() => { document.body.classList.add('arjs-ready'); }, 1000);
+
+            });
+
+            setTimeout(() => { document.body.classList.add('arjs-ready'); }, 15000);
+
+        </script>
+
+    </head>
+
+
+
+    <body style="margin: 0; overflow: hidden;">
+
+        <div id="splash-screen"><img src="assets/logo.png" alt="Cargando..."></div>
+
+
+
+        <a-scene
+
+            vr-mode-ui="enabled: false"
+
+            loading-screen="enabled: false;"
+
+            arjs='sourceType: webcam; debugUIEnabled: false;'
+
+            renderer="logarithmicDepthBuffer: true; colorManagement: true; sortObjects: true;" 
+
+            id="scene" embedded gesture-detector
+
+        >
+
+            <a-assets>
+
+                <video id="vid" src="assets/asset.mp4" preload="auto" response-type="arraybuffer" loop crossorigin webkit-playsinline autoplay playsinline></video>
+
+                <a-asset-item id="miModelo" src="assets/mi-modelo.glb"></a-asset-item>
+
+            </a-assets>
+
+
+
+            <a-entity light="type: ambient; intensity: 1; color: #ffffff"></a-entity>
+
+            <a-entity light="type: directional; intensity: 1.5; castShadow: false;" position="2 4 4"></a-entity>
+
+
+
+            <a-marker
+
+                type="pattern" preset="custom" url="assets/marker.patt"
+
+                videohandler smooth="true" smoothCount="10" smoothTolerance="0.01" smoothThreshold="5"
+
+                raycaster="objects: .clickable" emitevents="true"
+
+                cursor="fuse: false; rayOrigin: mouse;" id="markerA"
+
+            >
+
+                <a-video
+
+                    src="#vid"
+
+                    fix-video-size
+
+                    position="0 0 0" 
+
+                    rotation="-90 0 0"
+
+                    material="shader: flat; src: #vid; depthWrite: false;"
+
+                ></a-video>
+
+
+
+                <a-entity 
+
+                    id="rotation-container"
+
+                    position="0 0.5 1"
+
+                    class="clickable"
+
+                    gesture-handler="minScale: 0.25; maxScale: 10; rotationFactor: 1;"
+
+                >
+
+                    <a-entity
+
+                        id="animatedModel"
+
+                        gltf-model="#miModelo"
+
+                        scale="0.01 0.01 0.01"
+
+                        position="0 0 0" 
+
+                        rotation="-90 0 0"
+
+                        animation-mixer="loop: repeat" 
+
+                    ></a-entity>
+
+                </a-entity>
+
+
+
+            </a-marker>
+
+            <a-entity camera></a-entity>
+
+        </a-scene>
+
+    </body>
+
 </html>
