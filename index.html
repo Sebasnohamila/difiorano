@@ -19,30 +19,43 @@
         </style>
 
         <script>
-            AFRAME.registerComponent('activator', {
+            AFRAME.registerComponent('videohandler', {
                 init: function () {
                     var marker = this.el;
                     this.vid = document.querySelector("#vid");
-                    // Referencia al objeto que vive en la cámara (HUD)
-                    this.hud = document.querySelector("#hud-content");
                     this.model = document.querySelector("#animatedModel");
+                    this.contenido = document.querySelector("#contenedor-universal");
                     this.scanned = false; 
 
                     marker.addEventListener('markerFound', function () {
+                        // Si ya lo escaneamos una vez, no hacemos nada más (ya es hijo de la cámara)
                         if (this.scanned) return; 
                         this.scanned = true; 
                         
-                        // 1. Reproducir video
+                        // Reproducir video y animación
                         this.vid.play();
-                        
-                        // 2. Activar animación si existe
                         if (this.model) this.model.setAttribute('animation-mixer', 'timeScale: 1');
 
-                        // 3. EL TRUCO: Solo hacemos visible lo que ya estaba en la cámara
-                        this.hud.setAttribute('visible', true);
+                        // --- LÓGICA DE FIJADO A CÁMARA ---
+                        var camera = document.querySelector('[camera]');
+                        
+                        // "Despegamos" el contenido del marcador y lo agregamos a la cámara
+                        camera.object3D.add(this.contenido.object3D);
+                        
+                        // Ajustamos la posición relativa a la cámara
+                        // 0 en X (centro), 0 en Y (centro), -5 en Z (5 metros frente a ti)
+                        // NOTA: -20 era muy lejos, -5 es una distancia estándar para AR
+                        this.contenido.object3D.position.set(0, 0, -5);
+                        
+                        // Ajustamos la rotación. 
+                        // Como tus elementos hijos tienen rotation="-90 0 0", el contenedor debe
+                        // rotar 90 grados positivos (aprox 1.57 radianes) para quedar de frente.
+                        this.contenido.object3D.rotation.set(1.57, 0, 0);
                         
                     }.bind(this));
-                }
+                    
+                    // IMPORTANTE: No agregamos 'markerLost' para que no se pause ni se oculte.
+                },
             });
 
             AFRAME.registerComponent('fix-video-size', {
@@ -52,7 +65,7 @@
                     var applySize = function() {
                         if (videoEl.videoWidth > 0 && videoEl.videoHeight > 0) {
                             var aspectRatio = videoEl.videoHeight / videoEl.videoWidth;
-                            var scaleFactor = 4; // Tamaño fijo para pantalla
+                            var scaleFactor = 4; // Ajusta este número si quieres el video más grande o chico
                             planeEl.setAttribute('width', scaleFactor); 
                             planeEl.setAttribute('height', aspectRatio * scaleFactor);
                         }
@@ -65,7 +78,7 @@
             window.addEventListener('arjs-video-loaded', function(e) {
                 setTimeout(() => { document.body.classList.add('arjs-ready'); }, 1000);
             });
-            setTimeout(() => { document.body.classList.add('arjs-ready'); }, 15000);
+            setTimeout(() => { document.body.classList.add('arjs-ready'); }, 10000);
         </script>
     </head>
 
@@ -92,20 +105,26 @@
             <a-entity light="type: ambient; intensity: 1; color: #ffffff"></a-entity>
             <a-entity light="type: directional; intensity: 1.5; castShadow: false;" position="2 4 4"></a-entity>
 
-            <a-entity camera>
-                <a-entity id="hud-content" position="0 0 -5" visible="false">
+            <a-entity camera></a-entity>
+
+            <a-marker
+                type="pattern" preset="custom" url="assets/marker.patt"
+                videohandler
+                id="markerA"
+            >
+                <a-entity id="contenedor-universal">
                     
                     <a-video
                         src="#vid"
                         fix-video-size
                         position="0 0 0" 
-                        rotation="0 0 0"
+                        rotation="-90 0 0"
                         material="shader: flat; src: #vid; depthWrite: false;"
                     ></a-video>
 
                     <a-entity 
                         id="rotation-container"
-                        position="0 -1 1"
+                        position="0 0.5 1"
                         class="clickable"
                         gesture-handler="minScale: 0.25; maxScale: 10; rotationFactor: 1;"
                     >
@@ -114,20 +133,13 @@
                             gltf-model="#miModelo"
                             scale="0.04 0.04 0.04"
                             position="0 0 0" 
-                            rotation="0 0 0"
+                            rotation="-90 0 0"
                             animation-mixer="loop: repeat" 
                         ></a-entity>
                     </a-entity>
 
                 </a-entity>
-            </a-entity>
-
-            <a-marker
-                type="pattern" preset="custom" url="assets/marker.patt"
-                activator
-                id="markerA"
-            >
-                </a-marker>
+            </a-marker>
         </a-scene>
     </body>
 </html>
