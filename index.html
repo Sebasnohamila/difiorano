@@ -3,11 +3,12 @@
     <head>
         <script src="https://aframe.io/releases/1.0.4/aframe.min.js"></script>
         <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
-        <script src="https://raw.githack.com/AR-js-org/studio-backend/master/src/modules/marker/tools/gesture-detector.js"></script>
-        <script src="https://raw.githack.com/AR-js-org/studio-backend/master/src/modules/marker/tools/gesture-handler.js"></script>
         <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
 
         <style>
+            /* IMPORTANTE: Evita que la pantalla se deslice al tocar el modelo */
+            body { margin: 0; overflow: hidden; touch-action: none; }
+            
             #splash-screen {
                 position: fixed; top: 0; left: 0; width: 100%; height: 100%;
                 background-color: white; z-index: 9999;
@@ -19,33 +20,99 @@
         </style>
 
         <script>
-            // COMPONENTE LÓGICO: "El Interruptor"
+            // --- COMPONENTE 1: INTERRUPTOR (HUD) ---
+            // Detecta el marcador 1 vez y activa el contenido pegado a la cámara
             AFRAME.registerComponent('activator', {
                 init: function () {
                     var marker = this.el;
-                    // Buscamos los elementos que están DENTRO DE LA CÁMARA
                     this.hud = document.querySelector("#hud-container"); 
                     this.vid = document.querySelector("#vid");
                     this.model = document.querySelector("#animatedModel");
                     this.scanned = false;
 
                     marker.addEventListener('markerFound', function () {
-                        if (this.scanned) return; // Si ya se activó, no hacer nada
+                        if (this.scanned) return; 
                         this.scanned = true;
                         
-                        // 1. Hacer visible el contenedor pegado a la cámara
+                        // Hacer visible el grupo HUD
                         this.hud.setAttribute('visible', 'true');
                         
-                        // 2. Reproducir video y animación
+                        // Play video y animación
                         this.vid.play();
                         if (this.model) this.model.setAttribute('animation-mixer', 'timeScale: 1');
-                        
-                        console.log("Marcador detectado: HUD activado.");
                     }.bind(this));
                 }
             });
 
-            // COMPONENTE DE AJUSTE DE TAMAÑO DE VIDEO
+            // --- COMPONENTE 2: MANIPULADOR 3D MANUAL ---
+            // Permite rotar (1 dedo) y escalar (2 dedos) el objeto
+            AFRAME.registerComponent('manipulador-3d', {
+                init: function () {
+                    this.el.sceneEl.addEventListener('touchmove', this.handleTouchMove.bind(this));
+                    this.el.sceneEl.addEventListener('touchstart', this.handleTouchStart.bind(this));
+                    this.el.sceneEl.addEventListener('touchend', this.handleTouchEnd.bind(this));
+                    
+                    this.startX = 0;
+                    this.startY = 0;
+                    this.initialScale = 1;
+                    this.isPinching = false;
+                    this.initialDistance = 0;
+                },
+
+                handleTouchStart: function (evt) {
+                    if (evt.touches.length === 1) {
+                        this.startX = evt.touches[0].clientX;
+                        this.startY = evt.touches[0].clientY;
+                        this.isPinching = false;
+                    } else if (evt.touches.length === 2) {
+                        this.isPinching = true;
+                        var dx = evt.touches[0].clientX - evt.touches[1].clientX;
+                        var dy = evt.touches[0].clientY - evt.touches[1].clientY;
+                        this.initialDistance = Math.sqrt(dx * dx + dy * dy);
+                        this.initialScale = this.el.object3D.scale.x;
+                    }
+                },
+
+                handleTouchMove: function (evt) {
+                    // Solo actuar si el HUD es visible
+                    if (!this.el.object3D.visible && !this.el.parentEl.object3D.visible) return;
+
+                    if (evt.touches.length === 1 && !this.isPinching) {
+                        // ROTACIÓN
+                        var deltaX = evt.touches[0].clientX - this.startX;
+                        var deltaY = evt.touches[0].clientY - this.startY;
+
+                        // Rotar en Y (horizontal) y X (vertical)
+                        this.el.object3D.rotation.y += deltaX * 0.01;
+                        this.el.object3D.rotation.x += deltaY * 0.01;
+
+                        this.startX = evt.touches[0].clientX;
+                        this.startY = evt.touches[0].clientY;
+                    } 
+                    else if (evt.touches.length === 2) {
+                        // ESCALA (ZOOM)
+                        var dx = evt.touches[0].clientX - evt.touches[1].clientX;
+                        var dy = evt.touches[0].clientY - evt.touches[1].clientY;
+                        var currentDistance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        var scaleFactor = currentDistance / this.initialDistance;
+                        var newScale = this.initialScale * scaleFactor;
+
+                        // Límites de escala (min 0.01, max 0.2)
+                        newScale = Math.min(Math.max(newScale, 0.01), 0.2); 
+
+                        this.el.object3D.scale.set(newScale, newScale, newScale);
+                    }
+                },
+
+                handleTouchEnd: function (evt) {
+                    if (evt.touches.length < 2) {
+                        this.isPinching = false;
+                    }
+                }
+            });
+
+            // --- COMPONENTE 3: AJUSTE VIDEO ---
             AFRAME.registerComponent('fix-video-size', {
                 init: function () {
                     var videoEl = document.querySelector("#vid");
@@ -53,7 +120,7 @@
                     var applySize = function() {
                         if (videoEl.videoWidth > 0 && videoEl.videoHeight > 0) {
                             var aspectRatio = videoEl.videoHeight / videoEl.videoWidth;
-                            var scaleFactor = 3; // Tamaño base del video en pantalla
+                            var scaleFactor = 3.5; 
                             planeEl.setAttribute('width', scaleFactor); 
                             planeEl.setAttribute('height', aspectRatio * scaleFactor);
                         }
@@ -71,20 +138,16 @@
         </script>
     </head>
 
-    <body style="margin: 0; overflow: hidden;">
+    <body>
         <div id="splash-screen"><img src="assets/logo.png" alt="Cargando..."></div>
 
         <a-scene
             vr-mode-ui="enabled: false"
             loading-screen="enabled: false;"
             arjs='sourceType: webcam; debugUIEnabled: false;'
-            renderer="logarithmicDepthBuffer: true; colorManagement: true; sortObjects: true;" 
+            renderer="logarithmicDepthBuffer: true; colorManagement: true;" 
             id="scene" 
             embedded 
-            gesture-detector
-            raycaster="objects: .clickable" 
-            emitevents="true"
-            cursor="fuse: false; rayOrigin: mouse;"
         >
             <a-assets>
                 <video id="vid" src="assets/asset.mp4" preload="auto" loop crossorigin webkit-playsinline autoplay playsinline></video>
@@ -95,40 +158,29 @@
             <a-entity light="type: directional; intensity: 1.5; position="2 4 4"></a-entity>
 
             <a-entity camera>
-                
-                <a-entity id="hud-container" visible="false" position="0 0 -5" rotation="0 0 0">
+                <a-entity id="hud-container" visible="false" position="0 0 -5">
                     
                     <a-video
                         src="#vid"
                         fix-video-size
-                        position="0 0 0" 
+                        position="0 0 -1" 
                         material="shader: flat; src: #vid; depthWrite: false;"
                     ></a-video>
 
-                    <a-entity 
-                        id="rotation-wrapper"
-                        class="clickable"
-                        gesture-handler="minScale: 0.25; maxScale: 10; rotationFactor: 1;"
-                        position="0 0 0.1" 
-                    >
-                        <a-entity
-                            id="animatedModel"
-                            gltf-model="#miModelo"
-                            scale="0.04 0.04 0.04"
-                            position="0 -1 0" 
-                            rotation="0 0 0" 
-                            animation-mixer="loop: repeat" 
-                        ></a-entity>
-                    </a-entity>
+                    <a-entity
+                        id="animatedModel"
+                        gltf-model="#miModelo"
+                        scale="0.04 0.04 0.04"
+                        position="0 -0.5 1" 
+                        rotation="0 0 0" 
+                        animation-mixer="loop: repeat"
+                        manipulador-3d
+                    ></a-entity>
 
                 </a-entity>
             </a-entity>
 
-            <a-marker
-                type="pattern" preset="custom" url="assets/marker.patt"
-                activator
-                id="markerA"
-            >
+            <a-marker type="pattern" preset="custom" url="assets/marker.patt" activator id="markerA">
             </a-marker>
 
         </a-scene>
