@@ -34,21 +34,25 @@
                         this.vid.play();
                         if (this.model) this.model.setAttribute('animation-mixer', 'timeScale: 1');
 
-                        // --- CORRECCIÓN FINAL PARA GESTOS ---
-                        // En lugar de usar Three.js (object3D.add), usamos DOM estándar (appendChild).
-                        // Esto "avisa" a todos los componentes de A-Frame que el objeto se ha mudado.
-                        
                         var camera = document.querySelector('[camera]');
                         
-                        // 1. Mudamos legalmente el contenedor a la cámara
+                        // 1. Mudamos el contenedor a la cámara
                         camera.appendChild(this.contenido);
                         
-                        // 2. Ajustamos la posición usando setAttribute (A-Frame)
-                        //    -20 es la distancia. Ajusta a -15 o -25 según tu gusto.
-                        this.contenido.setAttribute('position', '0 0 -20');
+                        // --- CORRECCIONES DE VISIBILIDAD ---
                         
-                        // 3. Ajustamos la rotación para que quede de frente
-                        this.contenido.setAttribute('rotation', '90 0 0');
+                        // POSICIÓN: Lo acercamos más (z: -5 era lejos, -4 es mejor)
+                        this.contenido.setAttribute('position', '0 0 -4');
+                        
+                        // ROTACIÓN: IMPORTANTE. Lo ponemos en 0 0 0 para que te mire de frente.
+                        // (Antes lo girábamos y quedaba invisible de perfil)
+                        this.contenido.setAttribute('rotation', '0 0 0');
+                        
+                        // ESCALA: Forzamos escala 1, por si venía muy pequeño del marcador
+                        this.contenido.setAttribute('scale', '1 1 1');
+                        
+                        // VISIBLE: Nos aseguramos de que sea visible
+                        this.contenido.setAttribute('visible', 'true');
 
                     }.bind(this));
                 },
@@ -61,7 +65,8 @@
                     var applySize = function() {
                         if (videoEl.videoWidth > 0 && videoEl.videoHeight > 0) {
                             var aspectRatio = videoEl.videoHeight / videoEl.videoWidth;
-                            var scaleFactor = 8; 
+                            // Reduje un poco la escala de 8 a 6 para que quepa mejor en pantalla a distancia -4
+                            var scaleFactor = 6; 
                             planeEl.setAttribute('width', scaleFactor); 
                             planeEl.setAttribute('height', aspectRatio * scaleFactor);
                         }
@@ -114,7 +119,7 @@
                         src="#vid"
                         fix-video-size
                         position="0 0 0" 
-                        rotation="-90 0 0"
+                        rotation="0 0 0"
                         material="shader: flat; src: #vid; depthWrite: false;"
                     ></a-video>
 
@@ -128,8 +133,8 @@
                             id="animatedModel"
                             gltf-model="#miModelo"
                             scale="0.04 0.04 0.04"
-                            position="0 0 3" 
-                            rotation="-90 0 0"
+                            position="0 0 0.5" 
+                            rotation="0 0 0"
                             animation-mixer="loop: repeat" 
                         ></a-entity>
                     </a-entity>
@@ -137,5 +142,14 @@
                 </a-entity>
             </a-marker>
         </a-scene>
+        
+        <script>
+            // Este pequeño script asegura que AL PRINCIPIO, el contenido esté acostado en el marcador.
+            // Cuando el 'videohandler' se active, forzará la rotación a 0 0 0 (de pie).
+            document.addEventListener('DOMContentLoaded', function() {
+                var contenido = document.querySelector("#contenedor-universal");
+                contenido.setAttribute('rotation', '-90 0 0');
+            });
+        </script>
     </body>
 </html>
