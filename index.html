@@ -2,7 +2,7 @@
 <html>
     <head>
         <meta charset="utf-8">
-        <title>AR Estable y Segura</title>
+        <title>AR Definitiva - Sin Errores</title>
         <script src="https://aframe.io/releases/1.0.4/aframe.min.js"></script>
         <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
         <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
@@ -19,7 +19,52 @@
         </style>
 
         <script>
-            // 1. AJUSTE DE VIDEO
+            // 1. CONTROLADOR DE APARICIÓN (La lógica nueva)
+            AFRAME.registerComponent('ar-controller', {
+                init: function () {
+                    this.locked = false;
+                    this.marker = document.querySelector("#markerA");
+                    this.content = document.querySelector("#content-container");
+                    this.video = document.querySelector("#vid");
+                    this.model = document.querySelector("#animatedModel");
+
+                    // Escuchamos cuando se encuentra el marcador
+                    this.marker.addEventListener('markerFound', () => {
+                        if (this.locked) return; // Si ya lo fijamos, no hacemos nada
+
+                        // Esperamos 1.5 segundos para que la cámara estabilice la posición
+                        setTimeout(() => {
+                            if (this.locked) return;
+
+                            // 1. Copiamos la posición EXACTA del marcador al contenedor independiente
+                            var position = new THREE.Vector3();
+                            var quaternion = new THREE.Quaternion();
+                            var scale = new THREE.Vector3();
+
+                            this.marker.object3D.getWorldPosition(position);
+                            this.marker.object3D.getWorldQuaternion(quaternion);
+                            this.marker.object3D.getWorldScale(scale);
+
+                            // Aplicamos esos datos a nuestro objeto oculto
+                            this.content.object3D.position.copy(position);
+                            this.content.object3D.quaternion.copy(quaternion);
+                            this.content.object3D.scale.copy(scale);
+
+                            // 2. Hacemos visible el contenido y reproducimos
+                            this.content.setAttribute('visible', 'true');
+                            this.video.play();
+                            if(this.model) this.model.setAttribute('animation-mixer', 'timeScale: 1');
+
+                            // 3. Marcamos como bloqueado para que no se vuelva a mover
+                            this.locked = true;
+                            console.log("Objeto fijado en el mundo. Ya no depende del marcador.");
+                            
+                        }, 1500); // Retraso de 1.5 segundos
+                    });
+                }
+            });
+
+            // 2. AJUSTE DE TAMAÑO DE VIDEO
             AFRAME.registerComponent('fix-video-size', {
                 init: function () {
                     var videoEl = document.querySelector("#vid");
@@ -37,62 +82,6 @@
                 }
             });
 
-            // 2. ESTABILIZADOR CON RETRASO (SOLUCIÓN AL ERROR)
-            AFRAME.registerComponent('stay-visible', {
-                init: function () {
-                    this.isLocked = false;
-                    this.marker = this.el;
-                    this.content = document.querySelector("#content-container");
-                    this.video = document.querySelector("#vid");
-                    this.model = document.querySelector("#animatedModel");
-
-                    this.marker.addEventListener('markerFound', () => {
-                        // Si ya lo bloqueamos, no hacemos nada más
-                        if (this.isLocked) return;
-
-                        // 1. Mostramos el contenido inmediatamente para que el usuario lo vea
-                        this.content.setAttribute('visible', 'true');
-                        this.video.play();
-                        if(this.model) this.model.setAttribute('animation-mixer', 'timeScale: 1');
-
-                        // 2. ESPERAMOS 2 SEGUNDOS antes de congelarlo
-                        // Esto evita que salga volando si la cámara aún se está ajustando
-                        setTimeout(() => {
-                            if (this.isLocked) return; // Chequeo doble de seguridad
-                            
-                            // Verificamos si el marcador sigue visible antes de congelar
-                            if (this.marker.object3D.visible) {
-                                this.lockPosition();
-                            }
-                        }, 2000); // 2000 milisegundos = 2 segundos
-                    });
-                },
-
-                lockPosition: function() {
-                    this.isLocked = true;
-
-                    // Capturamos la posición, rotación y escala EXACTAS en este momento
-                    var position = new THREE.Vector3();
-                    var quaternion = new THREE.Quaternion();
-                    var scale = new THREE.Vector3();
-                    
-                    this.content.object3D.getWorldPosition(position);
-                    this.content.object3D.getWorldQuaternion(quaternion);
-                    this.content.object3D.getWorldScale(scale);
-
-                    // Desvinculamos del marcador y pegamos en la escena
-                    var scene = document.querySelector('a-scene');
-                    scene.appendChild(this.content);
-
-                    // Re-aplicamos las coordenadas mundiales para que no se mueva ni un milímetro
-                    this.content.object3D.position.copy(position);
-                    this.content.object3D.quaternion.copy(quaternion);
-                    this.content.object3D.scale.copy(scale);
-
-                    console.log("¡Posición bloqueada con éxito!");
-                }
-            });
-
             window.addEventListener('arjs-video-loaded', function(e) {
                 setTimeout(() => { document.body.classList.add('arjs-ready'); }, 1000);
             });
@@ -107,6 +96,7 @@
         <div id="splash-screen"><img src="assets/logo.png" alt="Cargando..."></div>
 
         <a-scene
+            ar-controller 
             vr-mode-ui="enabled: false"
             loading-screen="enabled: false;"
             arjs='sourceType: webcam; debugUIEnabled: false;'
@@ -125,31 +115,29 @@
                 type="pattern" 
                 preset="custom" 
                 url="assets/marker.patt" 
-                stay-visible 
-                id="markerA"
-                emitevents="true">
-
-                <a-entity id="content-container" visible="false">
-                    
-                    <a-video
-                        src="#vid"
-                        fix-video-size
-                        position="0 0 0" 
-                        rotation="-90 0 0"
-                        material="shader: flat; src: #vid; depthWrite: false;">
-                    </a-video>
-
-                    <a-entity
-                        id="animatedModel"
-                        gltf-model="#miModelo"
-                        scale="0.04 0.04 0.04"
-                        position="0 0 3" 
-                        rotation="-90 0 0"
-                        animation-mixer="loop: repeat; timeScale: 0">
-                    </a-entity>
-
-                </a-entity>
+                id="markerA">
             </a-marker>
+
+            <a-entity id="content-container" visible="false">
+                
+                <a-video
+                    src="#vid"
+                    fix-video-size
+                    position="0 0 0" 
+                    rotation="-90 0 0"
+                    material="shader: flat; src: #vid; depthWrite: false;">
+                </a-video>
+
+                <a-entity
+                    id="animatedModel"
+                    gltf-model="#miModelo"
+                    scale="0.04 0.04 0.04"
+                    position="0 0 3" 
+                    rotation="-90 0 0"
+                    animation-mixer="loop: repeat; timeScale: 0">
+                </a-entity>
+
+            </a-entity>
 
             <a-entity camera></a-entity>
         </a-scene>
