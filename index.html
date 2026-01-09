@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html>
     <head>
@@ -47,6 +46,16 @@
 
                     }.bind(this));
                 },
+                // ESTA ES LA SOLUCIÓN:
+                // Se ejecuta en cada fotograma. Si ya fue escaneado, forzamos
+                // al marcador a reportarse como "visible" internamente.
+                // Esto permite que el Raycaster (gestos) siga funcionando
+                // aunque AR.js intente ocultar el marcador.
+                tick: function() {
+                    if (this.scanned && this.el.object3D) {
+                        this.el.object3D.visible = true;
+                    }
+                }
             });
 
             AFRAME.registerComponent('fix-video-size', {
