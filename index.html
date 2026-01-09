@@ -19,47 +19,28 @@
         </style>
 
         <script>
-            AFRAME.registerComponent('videohandler', {
+            AFRAME.registerComponent('activator', {
                 init: function () {
                     var marker = this.el;
                     this.vid = document.querySelector("#vid");
+                    // Referencia al objeto que vive en la cámara (HUD)
+                    this.hud = document.querySelector("#hud-content");
                     this.model = document.querySelector("#animatedModel");
-                    this.contenido = document.querySelector("#contenedor-universal");
-                    // Referencias directas a los elementos internos para resetearlos
-                    this.videoPantalla = document.querySelector("#video-pantalla");
-                    this.modeloContainer = document.querySelector("#rotation-container");
-                    
                     this.scanned = false; 
 
                     marker.addEventListener('markerFound', function () {
                         if (this.scanned) return; 
                         this.scanned = true; 
                         
+                        // 1. Reproducir video
                         this.vid.play();
+                        
+                        // 2. Activar animación si existe
                         if (this.model) this.model.setAttribute('animation-mixer', 'timeScale: 1');
 
-                        // 1. MUDANZA: Mover todo el bloque HTML a la cámara
-                        var cameraEntity = document.querySelector('[camera]');
-                        cameraEntity.appendChild(this.contenido);
+                        // 3. EL TRUCO: Solo hacemos visible lo que ya estaba en la cámara
+                        this.hud.setAttribute('visible', true);
                         
-                        // 2. POSICIÓN: Lo ponemos frente a la cámara (Z -5 es una distancia segura)
-                        this.contenido.setAttribute('position', '0 0 -5');
-                        
-                        // 3. RESET TOTAL DE ROTACIÓN:
-                        // Quitamos todas las rotaciones extrañas (-90, etc) para que mire al frente
-                        this.contenido.setAttribute('rotation', '0 0 0');
-                        this.videoPantalla.setAttribute('rotation', '0 0 0'); 
-                        this.modeloContainer.setAttribute('rotation', '0 0 0'); 
-                        
-                        // 4. RESET DEL MODELO:
-                        // Dependiendo de cómo venga tu modelo GLB, a veces necesitan 
-                        // un ajuste. Si sale acostado, cambia este '0 0 0' por '-90 0 0' o '90 0 0'.
-                        // Por ahora lo dejamos en 0 para asegurar visibilidad.
-                        this.model.setAttribute('rotation', '0 0 0');
-
-                        // 5. Visibilidad forzada
-                        this.contenido.setAttribute('visible', true);
-
                     }.bind(this));
                 }
             });
@@ -71,16 +52,13 @@
                     var applySize = function() {
                         if (videoEl.videoWidth > 0 && videoEl.videoHeight > 0) {
                             var aspectRatio = videoEl.videoHeight / videoEl.videoWidth;
-                            // Escala ajustada para modo pantalla (HUD)
-                            var scaleFactor = 3; 
+                            var scaleFactor = 4; // Tamaño fijo para pantalla
                             planeEl.setAttribute('width', scaleFactor); 
                             planeEl.setAttribute('height', aspectRatio * scaleFactor);
                         }
                     };
                     videoEl.addEventListener('loadedmetadata', applySize);
-                    // Si ya cargó, aplicamos. Y si nos movemos a la cámara, re-aplicamos por si acaso.
                     if (videoEl.readyState >= 1) applySize();
-                    planeEl.sceneEl.addEventListener('markerFound', () => setTimeout(applySize, 100));
                 }
             });
 
@@ -114,27 +92,20 @@
             <a-entity light="type: ambient; intensity: 1; color: #ffffff"></a-entity>
             <a-entity light="type: directional; intensity: 1.5; castShadow: false;" position="2 4 4"></a-entity>
 
-            <a-entity camera></a-entity>
-
-            <a-marker
-                type="pattern" preset="custom" url="assets/marker.patt"
-                videohandler
-                id="markerA"
-            >
-                <a-entity id="contenedor-universal">
+            <a-entity camera>
+                <a-entity id="hud-content" position="0 0 -5" visible="false">
                     
                     <a-video
-                        id="video-pantalla"
                         src="#vid"
                         fix-video-size
                         position="0 0 0" 
-                        rotation="-90 0 0"
+                        rotation="0 0 0"
                         material="shader: flat; src: #vid; depthWrite: false;"
                     ></a-video>
 
                     <a-entity 
                         id="rotation-container"
-                        position="0 0 1"
+                        position="0 -1 1"
                         class="clickable"
                         gesture-handler="minScale: 0.25; maxScale: 10; rotationFactor: 1;"
                     >
@@ -142,13 +113,21 @@
                             id="animatedModel"
                             gltf-model="#miModelo"
                             scale="0.04 0.04 0.04"
-                            position="0 0 2" 
-                            rotation="-90 0 0"
+                            position="0 0 0" 
+                            rotation="0 0 0"
                             animation-mixer="loop: repeat" 
                         ></a-entity>
                     </a-entity>
+
                 </a-entity>
-            </a-marker>
+            </a-entity>
+
+            <a-marker
+                type="pattern" preset="custom" url="assets/marker.patt"
+                activator
+                id="markerA"
+            >
+                </a-marker>
         </a-scene>
     </body>
 </html>
