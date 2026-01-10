@@ -21,7 +21,7 @@
 
             /* ESTILOS DEL BOTÓN DE WHATSAPP */
             #whatsapp-button {
-                display: none; /* Oculto al inicio */
+                display: none; 
                 position: fixed;
                 bottom: 15px; 
                 left: 15px;   
@@ -94,17 +94,23 @@
                             this.startX = e.touches[0].clientX;
                             this.startY = e.touches[0].clientY;
 
-                            // Rotación Horizontal (Y) libre
-                            this.model.object3D.rotation.y += deltaX * 0.01;
+                            // --- CAMBIO NUEVO: RESTRICCIÓN HORIZONTAL (EJE Y) ---
+                            // Esto evita que se vea la parte de atrás (espalda)
+                            var newRotationY = this.model.object3D.rotation.y + (deltaX * 0.01);
+                            
+                            // LÍMITES Y: -0.8 (Izq) a 0.8 (Der) -> Aprox 45 grados a cada lado
+                            const minY = -0.8;
+                            const maxY = 0.8;
+                            this.model.object3D.rotation.y = Math.min(Math.max(newRotationY, minY), maxY);
 
-                            // Rotación Vertical (X) con límites estrictos
+
+                            // --- RESTRICCIÓN VERTICAL (EJE X) ---
+                            // Esto evita que se vea la parte inferior (panza)
                             var newRotationX = this.model.object3D.rotation.x + (deltaY * 0.01);
                             
-                            // LÍMITES: 0.0 (Horizonte) a 0.8 (Arriba)
-                            // Esto impide ver la parte inferior del objeto
+                            // LÍMITES X: 0.0 (Horizonte) a 0.8 (Arriba)
                             const minX = 0.0; 
                             const maxX = 0.8;
-
                             this.model.object3D.rotation.x = Math.min(Math.max(newRotationX, minX), maxX);
                         } 
                         else if (e.touches.length === 2 && this.initialDistance > 0) {
@@ -140,7 +146,6 @@
                             var aspectRatio = videoEl.videoHeight / videoEl.videoWidth;
                             var isPortrait = window.innerHeight > window.innerWidth;
                             
-                            // Video ajustado para ocupar más ancho en móvil
                             var scaleFactor = isPortrait ? 3.1 : 5; 
                             
                             planeEl.setAttribute('width', scaleFactor); 
