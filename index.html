@@ -8,10 +8,8 @@
         <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
 
         <style>
-            /* VITAL: Evita que la pantalla del navegador se mueva al tocar */
             body { margin: 0; overflow: hidden; touch-action: none; font-family: Arial, sans-serif;}
             
-            /* Pantalla de carga */
             #splash-screen {
                 position: fixed; top: 0; left: 0; width: 100%; height: 100%;
                 background-color: white; z-index: 9999;
@@ -21,138 +19,109 @@
             #splash-screen img { max-width: 60%; height: auto; }
             .arjs-ready #splash-screen { opacity: 0; pointer-events: none; }
 
-            /* ESTILOS DEL BOTÓN DE WHATSAPP */
+            /* --- NUEVOS ESTILOS DEL BOTÓN DE WHATSAPP --- */
             #whatsapp-button {
                 display: none; /* Oculto al inicio */
                 position: fixed;
-                bottom: 30px;
-                left: 50%;
-                transform: translateX(-50%);
-                z-index: 9998; /* Por encima de la escena AR */
-                background-color: #25D366; /* Color WhatsApp */
-                color: white;
-                padding: 15px 30px;
-                border-radius: 50px;
-                text-decoration: none;
-                font-weight: bold;
-                font-size: 18px;
-                box-shadow: 0px 4px 10px rgba(0,0,0,0.3);
+                bottom: 20px; /* Pegado abajo */
+                left: 20px;   /* Pegado a la izquierda */
+                z-index: 9998;
+                
+                /* Quitamos estilos de botón de texto */
+                background-color: transparent;
+                padding: 0;
+                border: none;
+                transform: none;
                 transition: transform 0.1s;
             }
+            /* Estilo de la imagen del icono */
+            #whatsapp-button img {
+                width: 60px;  /* Tamaño del icono */
+                height: 60px;
+                /* Sombra para que resalte sobre la cámara */
+                filter: drop-shadow(0px 2px 5px rgba(0,0,0,0.5)); 
+            }
             #whatsapp-button:active {
-                transform: translateX(-50%) scale(0.95); /* Efecto al pulsar */
+                transform: scale(0.9); /* Pequeño efecto al pulsar */
             }
         </style>
 
         <script>
-            // --- CONTROLADOR MAESTRO (Rotación, Zoom y Activación) ---
             AFRAME.registerComponent('master-controller', {
                 init: function () {
-                    // Referencias a elementos del DOM
                     this.marker = document.querySelector("#markerA");
                     this.hud = document.querySelector("#hud-container");
                     this.vid = document.querySelector("#vid");
                     this.model = document.querySelector("#animatedModel");
                     this.waButton = document.querySelector("#whatsapp-button");
                     
-                    // Estado del sistema
                     this.isUnlocked = false; 
                     
-                    // Variables para el control táctil (Rotación)
                     this.startX = 0;
                     this.startY = 0;
-
-                    // Variables para el control táctil (Zoom)
                     this.initialDistance = 0;
                     this.initialScaleVector = new THREE.Vector3();
 
-                    // 1. DETECCIÓN DEL MARCADOR (Solo ocurre una vez)
                     this.marker.addEventListener('markerFound', () => {
                         if (this.isUnlocked) return;
-                        
-                        console.log("¡Marcador detectado! Activando experiencia Bhastian.");
+                        console.log("¡Marcador detectado!");
                         this.isUnlocked = true;
-                        
-                        // Hacer visible el contenido 3D
                         this.hud.setAttribute('visible', 'true');
-                        // Mostrar el botón de WhatsApp
-                        this.waButton.style.display = "block";
-                        
-                        // Iniciar medios
+                        this.waButton.style.display = "block"; // Mostrar el icono
                         this.vid.play();
                         if (this.model) this.model.setAttribute('animation-mixer', 'timeScale: 1');
                     });
 
-                    // 2. ESCUCHA DE TOUCH START (Inicio del toque)
                     window.addEventListener('touchstart', (e) => {
                         if (!this.isUnlocked) return;
 
                         if(e.touches.length === 1) {
-                            // Configuración para rotación (1 dedo)
                             this.startX = e.touches[0].clientX;
                             this.startY = e.touches[0].clientY;
                         } else if (e.touches.length === 2) {
-                            // Configuración para zoom (2 dedos)
-                            // Calculamos la distancia inicial entre los dos dedos (Pitágoras)
                             var dx = e.touches[0].clientX - e.touches[1].clientX;
                             var dy = e.touches[0].clientY - e.touches[1].clientY;
                             this.initialDistance = Math.sqrt(dx * dx + dy * dy);
-                            
-                            // Guardamos la escala actual del modelo antes de empezar a hacer zoom
                             this.initialScaleVector.copy(this.model.object3D.scale);
                         }
                     });
 
-                    // 3. ESCUCHA DE TOUCH MOVE (Movimiento del dedo)
                     window.addEventListener('touchmove', (e) => {
                         if (!this.isUnlocked) return;
                         
-                        // --- LÓGICA DE ROTACIÓN (1 Dedo) ---
                         if(e.touches.length === 1) {
                             var deltaX = e.touches[0].clientX - this.startX;
                             var deltaY = e.touches[0].clientY - this.startY;
-
                             this.startX = e.touches[0].clientX;
                             this.startY = e.touches[0].clientY;
-
-                            // Velocidad de rotación (0.01 es suave)
                             this.model.object3D.rotation.y += deltaX * 0.01;
                             this.model.object3D.rotation.x += deltaY * 0.01;
                         } 
-                        
-                        // --- LÓGICA DE ZOOM (2 Dedos) ---
                         else if (e.touches.length === 2 && this.initialDistance > 0) {
-                             // Calculamos la nueva distancia
                              var dx = e.touches[0].clientX - e.touches[1].clientX;
                              var dy = e.touches[0].clientY - e.touches[1].clientY;
                              var currentDistance = Math.sqrt(dx * dx + dy * dy);
-
-                             // Factor de escala (cuánto ha cambiado la distancia)
                              var scaleFactor = currentDistance / this.initialDistance;
 
-                             // Calculamos la nueva escala basada en la inicial
                              var newX = this.initialScaleVector.x * scaleFactor;
                              var newY = this.initialScaleVector.y * scaleFactor;
                              var newZ = this.initialScaleVector.z * scaleFactor;
 
-                             // LÍMITES DE ZOOM (Ajusta estos valores según tu modelo)
-                             // La escala base es 0.04. 
-                             // Minimo 0.01 (muy pequeño), Máximo 0.15 (bastante grande)
-                             const minScale = 0.01;
-                             const maxScale = 0.15;
+                             // --- LÍMITES DE ZOOM ACTUALIZADOS (para el modelo más pequeño) ---
+                             // Como la base ahora es 0.02, ajustamos los límites:
+                             const minScale = 0.005; // Mínimo
+                             const maxScale = 0.08;  // Máximo
 
                              newX = Math.min(Math.max(newX, minScale), maxScale);
                              newY = Math.min(Math.max(newY, minScale), maxScale);
                              newZ = Math.min(Math.max(newZ, minScale), maxScale);
 
-                             // Aplicamos la nueva escala
                              this.model.object3D.scale.set(newX, newY, newZ);
                         }
                     });
                 }
             });
 
-            // Componente para ajustar el tamaño del video plano
             AFRAME.registerComponent('fix-video-size', {
                 init: function () {
                     var videoEl = document.querySelector("#vid");
@@ -160,7 +129,7 @@
                     var applySize = function() {
                         if (videoEl.videoWidth > 0 && videoEl.videoHeight > 0) {
                             var aspectRatio = videoEl.videoHeight / videoEl.videoWidth;
-                            var scaleFactor = 4; // Tamaño del plano de video
+                            var scaleFactor = 4; 
                             planeEl.setAttribute('width', scaleFactor); 
                             planeEl.setAttribute('height', aspectRatio * scaleFactor);
                         }
@@ -170,7 +139,6 @@
                 }
             });
 
-            // Lógica para ocultar la pantalla de carga
             window.addEventListener('arjs-video-loaded', function(e) {
                 setTimeout(() => { document.body.classList.add('arjs-ready'); }, 1000);
             });
@@ -181,10 +149,10 @@
     <body>
         <div id="splash-screen"><img src="assets/logo.png" alt="Cargando Bhastian AR..."></div>
 
-        <a href="https://wa.me/593983088889?text=Hola%20Bhastian,%20vi%20su%20experiencia%20AR%20y%20me%20interesa." 
+        <a href="https://wa.me/593999999999?text=Hola%20Bhastian,%20vi%20su%20experiencia%20AR%20y%20me%20interesa." 
            target="_blank" 
            id="whatsapp-button">
-           💬 Contactar por WhatsApp
+           <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp Icon">
         </a>
 
         <a-scene
@@ -205,20 +173,19 @@
             <a-entity light="type: directional; intensity: 1.5; position="2 4 4"></a-entity>
 
             <a-entity camera>
-                
                 <a-entity id="hud-container" visible="false" position="0 0 -6">
                     
                     <a-video
                         src="#vid"
                         fix-video-size
-                        position="0 0 -2" 
+                        position="0 2.5 -2" 
                         material="shader: flat; src: #vid; depthWrite: false;"
                     ></a-video>
 
                     <a-entity
                         id="animatedModel"
                         gltf-model="#miModelo"
-                        scale="0.04 0.04 0.04"
+                        scale="0.02 0.02 0.02"
                         position="0 -1 0" 
                         rotation="0 0 0" 
                         animation-mixer="loop: repeat"
