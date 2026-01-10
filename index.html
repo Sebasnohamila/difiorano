@@ -23,8 +23,8 @@
             #whatsapp-button {
                 display: none; 
                 position: fixed;
-                bottom: 12px; 
-                left: 12px;   
+                bottom: 15px; 
+                left: 15px;   
                 z-index: 9998;
                 background-color: transparent;
                 padding: 0;
@@ -32,10 +32,11 @@
                 transform: none;
                 transition: transform 0.1s;
             }
+            /* --- CAMBIO 3: REDUCCIÓN TAMAÑO WHATSAPP (30px) --- */
             #whatsapp-button img {
-                width: 60px;  
-                height: 60px;
-                filter: drop-shadow(0px 2px 5px rgba(0,0,0,0.5)); 
+                width: 30px;  /* Antes 60px, ahora la mitad */
+                height: 30px;
+                filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.5)); 
             }
             #whatsapp-button:active {
                 transform: scale(0.9); 
@@ -88,10 +89,25 @@
                         if(e.touches.length === 1) {
                             var deltaX = e.touches[0].clientX - this.startX;
                             var deltaY = e.touches[0].clientY - this.startY;
+
                             this.startX = e.touches[0].clientX;
                             this.startY = e.touches[0].clientY;
+
+                            // Rotación horizontal (Y) libre
                             this.model.object3D.rotation.y += deltaX * 0.01;
-                            this.model.object3D.rotation.x += deltaY * 0.01;
+
+                            // --- CAMBIO 2: RESTRICCIÓN DE GIRO VERTICAL (X) ---
+                            // Calculamos la nueva rotación propuesta
+                            var newRotationX = this.model.object3D.rotation.x + (deltaY * 0.01);
+                            
+                            // LIMITES: 
+                            // -0.5 radianes (aprox -28 grados) hacia arriba
+                            // 0.8 radianes (aprox 45 grados) hacia abajo
+                            const minX = -0.5; 
+                            const maxX = 0.8;
+
+                            // Aplicamos el "tope" (Clamp)
+                            this.model.object3D.rotation.x = Math.min(Math.max(newRotationX, minX), maxX);
                         } 
                         else if (e.touches.length === 2 && this.initialDistance > 0) {
                              var dx = e.touches[0].clientX - e.touches[1].clientX;
@@ -103,9 +119,6 @@
                              var newY = this.initialScaleVector.y * scaleFactor;
                              var newZ = this.initialScaleVector.z * scaleFactor;
 
-                             // --- CAMBIO 1: ZOOM MÁXIMO AUMENTADO ---
-                             // Minimo se mantiene en 0.005
-                             // Maximo aumentado de 0.08 a 0.35 para poder acercar mucho más
                              const minScale = 0.005; 
                              const maxScale = 0.35;  
 
@@ -128,13 +141,11 @@
                         if (videoEl.videoWidth > 0 && videoEl.videoHeight > 0) {
                             var aspectRatio = videoEl.videoHeight / videoEl.videoWidth;
                             
-                            // --- CAMBIO 2: AJUSTE DE ANCHO DE VIDEO ---
-                            // Detectamos si es celular vertical (Portrait)
                             var isPortrait = window.innerHeight > window.innerWidth;
                             
-                            // Si es vertical, usamos un ancho de 2.5 (más angosto)
-                            // Si es horizontal (PC/Tablet apaisada), usamos 4
-                            var scaleFactor = isPortrait ? 2.5 : 4; 
+                            // --- CAMBIO 1: VIDEO MÁS ANCHO ---
+                            // Aumentado de 2.5 a 3.1 para ocupar más pantalla en celular
+                            var scaleFactor = isPortrait ? 3.1 : 5; 
                             
                             planeEl.setAttribute('width', scaleFactor); 
                             planeEl.setAttribute('height', aspectRatio * scaleFactor);
@@ -142,8 +153,6 @@
                     };
                     videoEl.addEventListener('loadedmetadata', applySize);
                     if (videoEl.readyState >= 1) applySize();
-                    
-                    // Escuchamos si giran la pantalla para recalcular
                     window.addEventListener('resize', applySize);
                 }
             });
