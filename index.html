@@ -6,6 +6,8 @@
         <script src="https://aframe.io/releases/1.0.4/aframe.min.js"></script>
         <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
         <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
+        
+        <script src="https://unpkg.com/aframe-particle-system-component@1.0.x/dist/aframe-particle-system-component.min.js"></script>
 
         <style>
             body { margin: 0; overflow: hidden; touch-action: none; font-family: Arial, sans-serif;}
@@ -24,7 +26,7 @@
                 display: none; 
                 position: fixed;
                 bottom: 15px; 
-                left: 15px;   
+                left: 15px;    
                 z-index: 9998;
                 background-color: transparent;
                 padding: 0;
@@ -94,21 +96,14 @@
                             this.startX = e.touches[0].clientX;
                             this.startY = e.touches[0].clientY;
 
-                            // --- CAMBIO NUEVO: RESTRICCIÓN HORIZONTAL (EJE Y) ---
-                            // Esto evita que se vea la parte de atrás (espalda)
+                            // RESTRICCIÓN HORIZONTAL (EJE Y)
                             var newRotationY = this.model.object3D.rotation.y + (deltaX * 0.01);
-                            
-                            // LÍMITES Y: -0.8 (Izq) a 0.8 (Der) -> Aprox 45 grados a cada lado
                             const minY = -0.8;
                             const maxY = 0.8;
                             this.model.object3D.rotation.y = Math.min(Math.max(newRotationY, minY), maxY);
 
-
-                            // --- RESTRICCIÓN VERTICAL (EJE X) ---
-                            // Esto evita que se vea la parte inferior (panza)
+                            // RESTRICCIÓN VERTICAL (EJE X)
                             var newRotationX = this.model.object3D.rotation.x + (deltaY * 0.01);
-                            
-                            // LÍMITES X: 0.0 (Horizonte) a 0.8 (Arriba)
                             const minX = 0.0; 
                             const maxX = 0.8;
                             this.model.object3D.rotation.x = Math.min(Math.max(newRotationX, minX), maxX);
@@ -189,7 +184,7 @@
             </a-assets>
 
             <a-entity light="type: ambient; intensity: 1.2; color: #ffffff"></a-entity>
-            <a-entity light="type: directional; intensity: 1.5; position="2 4 4"></a-entity>
+            <a-entity light="type: directional; intensity: 1.5;" position="2 4 4"></a-entity>
 
             <a-entity camera>
                 <a-entity id="hud-container" visible="false" position="0 0 -6">
@@ -209,6 +204,11 @@
                         rotation="0 0 0" 
                         animation-mixer="loop: repeat"
                     ></a-entity>
+
+                    <a-entity 
+                        position="0 -1 0" 
+                        particle-system="preset: dust; color: #00ffff, #ff00ff; particleCount: 300; size: 1; opacity: 0.5;">
+                    </a-entity>
 
                 </a-entity>
             </a-entity>
