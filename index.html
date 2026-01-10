@@ -19,30 +19,26 @@
             #splash-screen img { max-width: 60%; height: auto; }
             .arjs-ready #splash-screen { opacity: 0; pointer-events: none; }
 
-            /* --- NUEVOS ESTILOS DEL BOTÓN DE WHATSAPP --- */
+            /* ESTILOS DEL BOTÓN DE WHATSAPP */
             #whatsapp-button {
-                display: none; /* Oculto al inicio */
+                display: none; 
                 position: fixed;
-                bottom: 12px; /* Pegado abajo */
-                left: 12px;   /* Pegado a la izquierda */
+                bottom: 12px; 
+                left: 12px;   
                 z-index: 9998;
-                
-                /* Quitamos estilos de botón de texto */
                 background-color: transparent;
                 padding: 0;
                 border: none;
                 transform: none;
                 transition: transform 0.1s;
             }
-            /* Estilo de la imagen del icono */
             #whatsapp-button img {
-                width: 60px;  /* Tamaño del icono */
+                width: 60px;  
                 height: 60px;
-                /* Sombra para que resalte sobre la cámara */
                 filter: drop-shadow(0px 2px 5px rgba(0,0,0,0.5)); 
             }
             #whatsapp-button:active {
-                transform: scale(0.9); /* Pequeño efecto al pulsar */
+                transform: scale(0.9); 
             }
         </style>
 
@@ -67,7 +63,7 @@
                         console.log("¡Marcador detectado!");
                         this.isUnlocked = true;
                         this.hud.setAttribute('visible', 'true');
-                        this.waButton.style.display = "block"; // Mostrar el icono
+                        this.waButton.style.display = "block"; 
                         this.vid.play();
                         if (this.model) this.model.setAttribute('animation-mixer', 'timeScale: 1');
                     });
@@ -107,10 +103,11 @@
                              var newY = this.initialScaleVector.y * scaleFactor;
                              var newZ = this.initialScaleVector.z * scaleFactor;
 
-                             // --- LÍMITES DE ZOOM ACTUALIZADOS (para el modelo más pequeño) ---
-                             // Como la base ahora es 0.02, ajustamos los límites:
-                             const minScale = 0.005; // Mínimo
-                             const maxScale = 0.08;  // Máximo
+                             // --- CAMBIO 1: ZOOM MÁXIMO AUMENTADO ---
+                             // Minimo se mantiene en 0.005
+                             // Maximo aumentado de 0.08 a 0.35 para poder acercar mucho más
+                             const minScale = 0.005; 
+                             const maxScale = 0.35;  
 
                              newX = Math.min(Math.max(newX, minScale), maxScale);
                              newY = Math.min(Math.max(newY, minScale), maxScale);
@@ -126,16 +123,28 @@
                 init: function () {
                     var videoEl = document.querySelector("#vid");
                     var planeEl = this.el; 
+                    
                     var applySize = function() {
                         if (videoEl.videoWidth > 0 && videoEl.videoHeight > 0) {
                             var aspectRatio = videoEl.videoHeight / videoEl.videoWidth;
-                            var scaleFactor = 4; 
+                            
+                            // --- CAMBIO 2: AJUSTE DE ANCHO DE VIDEO ---
+                            // Detectamos si es celular vertical (Portrait)
+                            var isPortrait = window.innerHeight > window.innerWidth;
+                            
+                            // Si es vertical, usamos un ancho de 2.5 (más angosto)
+                            // Si es horizontal (PC/Tablet apaisada), usamos 4
+                            var scaleFactor = isPortrait ? 2.5 : 4; 
+                            
                             planeEl.setAttribute('width', scaleFactor); 
                             planeEl.setAttribute('height', aspectRatio * scaleFactor);
                         }
                     };
                     videoEl.addEventListener('loadedmetadata', applySize);
                     if (videoEl.readyState >= 1) applySize();
+                    
+                    // Escuchamos si giran la pantalla para recalcular
+                    window.addEventListener('resize', applySize);
                 }
             });
 
