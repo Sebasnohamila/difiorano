@@ -21,7 +21,7 @@
 
             /* ESTILOS DEL BOTÓN DE WHATSAPP */
             #whatsapp-button {
-                display: none; 
+                display: none; /* Oculto al inicio */
                 position: fixed;
                 bottom: 15px; 
                 left: 15px;   
@@ -32,9 +32,8 @@
                 transform: none;
                 transition: transform 0.1s;
             }
-            /* --- CAMBIO 3: REDUCCIÓN TAMAÑO WHATSAPP (30px) --- */
             #whatsapp-button img {
-                width: 30px;  /* Antes 60px, ahora la mitad */
+                width: 30px;  
                 height: 30px;
                 filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.5)); 
             }
@@ -63,8 +62,10 @@
                         if (this.isUnlocked) return;
                         console.log("¡Marcador detectado!");
                         this.isUnlocked = true;
+                        
                         this.hud.setAttribute('visible', 'true');
                         this.waButton.style.display = "block"; 
+                        
                         this.vid.play();
                         if (this.model) this.model.setAttribute('animation-mixer', 'timeScale: 1');
                     });
@@ -93,20 +94,17 @@
                             this.startX = e.touches[0].clientX;
                             this.startY = e.touches[0].clientY;
 
-                            // Rotación horizontal (Y) libre
+                            // Rotación Horizontal (Y) libre
                             this.model.object3D.rotation.y += deltaX * 0.01;
 
-                            // --- CAMBIO 2: RESTRICCIÓN DE GIRO VERTICAL (X) ---
-                            // Calculamos la nueva rotación propuesta
+                            // Rotación Vertical (X) con límites estrictos
                             var newRotationX = this.model.object3D.rotation.x + (deltaY * 0.01);
                             
-                            // LIMITES: 
-                            // -0.5 radianes (aprox -28 grados) hacia arriba
-                            // 0.8 radianes (aprox 45 grados) hacia abajo
-                            const minX = -0.5; 
+                            // LÍMITES: 0.0 (Horizonte) a 0.8 (Arriba)
+                            // Esto impide ver la parte inferior del objeto
+                            const minX = 0.0; 
                             const maxX = 0.8;
 
-                            // Aplicamos el "tope" (Clamp)
                             this.model.object3D.rotation.x = Math.min(Math.max(newRotationX, minX), maxX);
                         } 
                         else if (e.touches.length === 2 && this.initialDistance > 0) {
@@ -140,11 +138,9 @@
                     var applySize = function() {
                         if (videoEl.videoWidth > 0 && videoEl.videoHeight > 0) {
                             var aspectRatio = videoEl.videoHeight / videoEl.videoWidth;
-                            
                             var isPortrait = window.innerHeight > window.innerWidth;
                             
-                            // --- CAMBIO 1: VIDEO MÁS ANCHO ---
-                            // Aumentado de 2.5 a 3.1 para ocupar más pantalla en celular
+                            // Video ajustado para ocupar más ancho en móvil
                             var scaleFactor = isPortrait ? 3.1 : 5; 
                             
                             planeEl.setAttribute('width', scaleFactor); 
