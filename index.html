@@ -35,10 +35,10 @@
             #splash-screen img { 
                 width: 120px;
                 height: auto; 
-                margin-bottom: 30px; /* Un poco menos de margen para agrupar mejor */
+                margin-bottom: 30px;
             }
             
-            /* CONTENEDOR DE CARGA (Para ocultarlo fácil) */
+            /* CONTENEDOR DE CARGA */
             #loader-content {
                 display: flex;
                 flex-direction: column;
@@ -76,30 +76,22 @@
                 pointer-events: none;
             }
 
-            /* --- BOTÓN DE INICIO (CENTRADO Y MÁS PEQUEÑO) --- */
+            /* --- BOTÓN DE INICIO --- */
             #start-button {
-                /* Ya no es position: fixed, ahora obedece al flexbox del padre */
                 position: relative; 
-                margin-top: 10px; /* Pequeño ajuste visual */
-                
+                margin-top: 10px;
                 background-color: #000000; 
                 color: white;
-                
-                /* CAMBIO: Fuente más pequeña */
                 font-size: 13px; 
                 font-weight: 700; 
                 letter-spacing: 1.5px; 
                 text-transform: uppercase;
-                
-                /* Padding ajustado al nuevo tamaño */
                 padding: 14px 28px; 
                 border: none;
                 border-radius: 40px;
                 box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4); 
-                
-                opacity: 0; /* Invisible al inicio */
-                display: none; /* No ocupa espacio al inicio */
-                
+                opacity: 0;
+                display: none;
                 transform: scale(0.95);
                 transition: transform 0.2s, opacity 0.5s ease;
                 cursor: pointer;
@@ -107,16 +99,16 @@
             }
 
             #start-button:active {
-                transform: scale(0.90); /* Efecto click sin moverse de lugar */
+                transform: scale(0.90);
                 background-color: #333333; 
             }
 
-            /* --- BOTÓN DE WHATSAPP --- */
+            /* --- BOTÓN DE WHATSAPP (MODIFICADO: Derecha y 50% tamaño) --- */
             #whatsapp-button {
                 display: none; 
                 position: fixed;
                 bottom: 20px; 
-                left: 20px;      
+                right: 20px; /* CAMBIO: Izquierda a Derecha */     
                 z-index: 9998;
                 background-color: transparent;
                 padding: 0;
@@ -124,9 +116,10 @@
                 transition: transform 0.2s;
             }
             #whatsapp-button img {
-                width: 55px;  
-                height: 55px;
-                filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.2)); 
+                width: 27.5px;  /* CAMBIO: 50% de 55px */
+                height: 27.5px; /* CAMBIO: 50% de 55px */
+                /* Ajusté la sombra para el tamaño pequeño */
+                filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.2)); 
             }
             #whatsapp-button:active {
                 transform: scale(0.9); 
@@ -153,25 +146,23 @@
                     clearInterval(interval);
                     percentText.innerText = "100%";
                     
-                    // Pequeña pausa para que el usuario vea el 100% y luego cambio suave
                     setTimeout(() => {
-                        // 1. Ocultar el contenedor de carga (spinner y texto)
+                        // 1. Ocultar el contenedor de carga
                         const loaderContent = document.getElementById('loader-content');
                         loaderContent.style.opacity = '0';
                         
                         setTimeout(() => {
-                            loaderContent.style.display = 'none'; // Quitar del flujo
+                            loaderContent.style.display = 'none'; 
                             
-                            // 2. Mostrar el botón en el mismo lugar
+                            // 2. Mostrar el botón
                             const btn = document.getElementById('start-button');
                             btn.style.display = 'block';
                             
-                            // Forzar un reflow para que la transición de opacidad funcione
                             requestAnimationFrame(() => {
                                 btn.style.opacity = '1';
                                 btn.style.transform = 'scale(1)';
                             });
-                        }, 300); // Espera a que termine el fade out del loader
+                        }, 300);
                         
                     }, 500);
                 };
@@ -196,19 +187,14 @@
                         if (this.isUnlocked) return;
                         
                         this.isUnlocked = true;
-                        
-                        // Ocultar botón y splash
                         this.startButton.style.opacity = '0';
                         this.splash.classList.add('hidden-splash');
-                        
-                        // Mostrar experiencia
                         this.hud.setAttribute('visible', 'true');
                         this.waButton.style.display = "block"; 
                         this.vid.play();
                         if (this.model) this.model.setAttribute('animation-mixer', 'timeScale: 1');
                     });
 
-                    // Gestos Táctiles (Touch)
                     window.addEventListener('touchstart', (e) => {
                         if (!this.isUnlocked) return;
                         if(e.touches.length === 1) {
@@ -272,7 +258,6 @@
                 if(window.finishLoading) window.finishLoading();
             });
             
-            // Fallback de seguridad
             setTimeout(() => { 
                 if(window.finishLoading) window.finishLoading();
             }, 6000);
@@ -282,12 +267,10 @@
     <body>
         <div id="splash-screen">
             <img src="assets/logo.png" alt="Bhastian Logo">
-            
             <div id="loader-content">
                 <div class="spinner"></div>
                 <div id="loading-text">CARGANDO <span id="percent">0%</span></div>
             </div>
-
             <button id="start-button">VER EXPERIENCIA</button>
         </div>
 
@@ -310,10 +293,8 @@
                 <video id="vid" src="assets/asset.mp4" preload="auto" loop crossorigin webkit-playsinline autoplay playsinline></video>
                 <a-asset-item id="miModelo" src="assets/mi-modelo.glb"></a-asset-item>
             </a-assets>
-
             <a-entity light="type: ambient; intensity: 1.2; color: #ffffff"></a-entity>
             <a-entity light="type: directional; intensity: 1.5; position='2 4 4'"></a-entity>
-
             <a-entity camera>
                 <a-entity id="hud-container" visible="false" position="0 0 -6">
                     <a-video
