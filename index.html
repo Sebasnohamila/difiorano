@@ -35,9 +35,17 @@
             #splash-screen img { 
                 width: 120px;
                 height: auto; 
-                margin-bottom: 40px;
+                margin-bottom: 30px; /* Un poco menos de margen para agrupar mejor */
             }
             
+            /* CONTENEDOR DE CARGA (Para ocultarlo fácil) */
+            #loader-content {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                transition: opacity 0.3s ease;
+            }
+
             /* SPINNER */
             .spinner {
                 width: 30px;
@@ -53,13 +61,13 @@
                 to { transform: rotate(360deg); }
             }
 
-            /* TEXTO DE PORCENTAJE (MODIFICADO) */
+            /* TEXTO DE PORCENTAJE */
             #loading-text {
                 color: #888;
                 font-size: 14px;
-                font-weight: 600; /* Un poco más grueso para mayúsculas */
-                letter-spacing: 1px; /* Espaciado para que se lea mejor en mayúsculas */
-                text-transform: uppercase; /* Fuerza mayúsculas por CSS */
+                font-weight: 600;
+                letter-spacing: 1px;
+                text-transform: uppercase;
             }
 
             .hidden-splash {
@@ -68,42 +76,39 @@
                 pointer-events: none;
             }
 
-            /* --- BOTÓN DE INICIO (NEGRO Y MAYÚSCULAS) --- */
+            /* --- BOTÓN DE INICIO (CENTRADO Y MÁS PEQUEÑO) --- */
             #start-button {
-                position: fixed;
-                bottom: 60px; 
-                left: 50%;
-                transform: translateX(-50%) scale(0.95);
-                z-index: 9999;
+                /* Ya no es position: fixed, ahora obedece al flexbox del padre */
+                position: relative; 
+                margin-top: 10px; /* Pequeño ajuste visual */
                 
                 background-color: #000000; 
                 color: white;
-                font-size: 16px; /* Ajuste leve para compensar mayúsculas */
-                font-weight: 700; /* Bold */
-                letter-spacing: 1px; /* Espaciado elegante */
-                text-transform: uppercase; /* Fuerza mayúsculas */
                 
-                padding: 16px 32px;
+                /* CAMBIO: Fuente más pequeña */
+                font-size: 13px; 
+                font-weight: 700; 
+                letter-spacing: 1.5px; 
+                text-transform: uppercase;
+                
+                /* Padding ajustado al nuevo tamaño */
+                padding: 14px 28px; 
                 border: none;
                 border-radius: 40px;
                 box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4); 
                 
-                opacity: 0;
-                transition: transform 0.2s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 0.5s ease;
+                opacity: 0; /* Invisible al inicio */
+                display: none; /* No ocupa espacio al inicio */
+                
+                transform: scale(0.95);
+                transition: transform 0.2s, opacity 0.5s ease;
                 cursor: pointer;
-                display: none;
                 -webkit-font-smoothing: antialiased;
             }
 
             #start-button:active {
-                transform: translateX(-50%) scale(0.92);
+                transform: scale(0.90); /* Efecto click sin moverse de lugar */
                 background-color: #333333; 
-            }
-            
-            .arjs-ready #start-button { 
-                display: block; 
-                opacity: 1;
-                transform: translateX(-50%) scale(1);
             }
 
             /* --- BOTÓN DE WHATSAPP --- */
@@ -133,6 +138,7 @@
                 const percentText = document.getElementById('percent');
                 let progress = 0;
                 
+                // Simulación de carga
                 const interval = setInterval(() => {
                     if (progress < 90) {
                         let increment = Math.random() * (progress < 50 ? 5 : 2); 
@@ -142,9 +148,32 @@
                     }
                 }, 150);
 
+                // Función que se ejecuta al terminar la carga (100%)
                 window.finishLoading = () => {
                     clearInterval(interval);
                     percentText.innerText = "100%";
+                    
+                    // Pequeña pausa para que el usuario vea el 100% y luego cambio suave
+                    setTimeout(() => {
+                        // 1. Ocultar el contenedor de carga (spinner y texto)
+                        const loaderContent = document.getElementById('loader-content');
+                        loaderContent.style.opacity = '0';
+                        
+                        setTimeout(() => {
+                            loaderContent.style.display = 'none'; // Quitar del flujo
+                            
+                            // 2. Mostrar el botón en el mismo lugar
+                            const btn = document.getElementById('start-button');
+                            btn.style.display = 'block';
+                            
+                            // Forzar un reflow para que la transición de opacidad funcione
+                            requestAnimationFrame(() => {
+                                btn.style.opacity = '1';
+                                btn.style.transform = 'scale(1)';
+                            });
+                        }, 300); // Espera a que termine el fade out del loader
+                        
+                    }, 500);
                 };
             });
 
@@ -167,15 +196,19 @@
                         if (this.isUnlocked) return;
                         
                         this.isUnlocked = true;
+                        
+                        // Ocultar botón y splash
                         this.startButton.style.opacity = '0';
-                        setTimeout(() => { this.startButton.style.display = 'none'; }, 300);
                         this.splash.classList.add('hidden-splash');
+                        
+                        // Mostrar experiencia
                         this.hud.setAttribute('visible', 'true');
                         this.waButton.style.display = "block"; 
                         this.vid.play();
                         if (this.model) this.model.setAttribute('animation-mixer', 'timeScale: 1');
                     });
 
+                    // Gestos Táctiles (Touch)
                     window.addEventListener('touchstart', (e) => {
                         if (!this.isUnlocked) return;
                         if(e.touches.length === 1) {
@@ -237,11 +270,11 @@
 
             window.addEventListener('arjs-video-loaded', function(e) {
                 if(window.finishLoading) window.finishLoading();
-                setTimeout(() => { document.body.classList.add('arjs-ready'); }, 800);
             });
+            
+            // Fallback de seguridad
             setTimeout(() => { 
                 if(window.finishLoading) window.finishLoading();
-                document.body.classList.add('arjs-ready'); 
             }, 6000);
         </script>
     </head>
@@ -250,11 +283,13 @@
         <div id="splash-screen">
             <img src="assets/logo.png" alt="Bhastian Logo">
             
-            <div class="spinner"></div>
-            <div id="loading-text">CARGANDO <span id="percent">0%</span></div>
-        </div>
+            <div id="loader-content">
+                <div class="spinner"></div>
+                <div id="loading-text">CARGANDO <span id="percent">0%</span></div>
+            </div>
 
-        <button id="start-button">VER EXPERIENCIA</button>
+            <button id="start-button">VER EXPERIENCIA</button>
+        </div>
 
         <a href="https://wa.me/593983088889?text=Hola%20Bhastian,%20vi%20su%20experiencia%20AR%20y%20me%20interesa." 
            target="_blank" 
