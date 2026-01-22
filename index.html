@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
         <title>Experiencia AR</title>
         
-        <script src="https://aframe.io/releases/1.0.4/aframe.min.js"></script>
+        <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
         <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
         <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
 
@@ -103,12 +103,12 @@
                 background-color: #333333; 
             }
 
-            /* --- BOTÓN DE WHATSAPP (MODIFICADO: Derecha y 50% tamaño) --- */
+            /* --- BOTÓN DE WHATSAPP --- */
             #whatsapp-button {
                 display: none; 
                 position: fixed;
                 bottom: 20px; 
-                right: 20px; /* CAMBIO: Izquierda a Derecha */     
+                right: 20px;       
                 z-index: 9998;
                 background-color: transparent;
                 padding: 0;
@@ -116,9 +116,8 @@
                 transition: transform 0.2s;
             }
             #whatsapp-button img {
-                width: 27.5px;  /* CAMBIO: 50% de 55px */
-                height: 27.5px; /* CAMBIO: 50% de 55px */
-                /* Ajusté la sombra para el tamaño pequeño */
+                width: 27.5px; 
+                height: 27.5px;
                 filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.2)); 
             }
             #whatsapp-button:active {
@@ -192,7 +191,12 @@
                         this.hud.setAttribute('visible', 'true');
                         this.waButton.style.display = "block"; 
                         this.vid.play();
-                        if (this.model) this.model.setAttribute('animation-mixer', 'timeScale: 1');
+                        
+                        // Aseguramos que el modelo esté visible al desbloquear
+                        if (this.model) {
+                             this.model.setAttribute('visible', 'true');
+                             this.model.setAttribute('animation-mixer', 'timeScale: 1');
+                        }
                     });
 
                     window.addEventListener('touchstart', (e) => {
@@ -228,7 +232,8 @@
                              var scaleFactor = Math.sqrt(dx*dx + dy*dy) / this.initialDistance;
 
                              var newS = this.initialScaleVector.x * scaleFactor;
-                             newS = Math.min(Math.max(newS, 0.005), 0.35);
+                             // Ajusté el máximo de escala para que permita hacerlo más grande
+                             newS = Math.min(Math.max(newS, 0.005), 2.0);
                              this.model.object3D.scale.set(newS, newS, newS);
                         }
                     });
@@ -266,7 +271,7 @@
 
     <body>
         <div id="splash-screen">
-            <img src="assets/logo.png" alt="Bhastian Logo">
+            <img src="logo.png" alt="Bhastian Logo">
             <div id="loader-content">
                 <div class="spinner"></div>
                 <div id="loading-text">CARGANDO <span id="percent">0%</span></div>
@@ -290,11 +295,14 @@
             embedded 
         >
             <a-assets>
-                <video id="vid" src="assets/asset.mp4" preload="auto" loop crossorigin webkit-playsinline autoplay playsinline></video>
-                <a-asset-item id="miModelo" src="assets/mi-modelo.glb"></a-asset-item>
+                <video id="vid" src="senna.mp4" preload="auto" loop crossorigin webkit-playsinline autoplay playsinline></video>
+                <a-asset-item id="miModelo" src="IMOLAF-v1.glb"></a-asset-item>
             </a-assets>
+
             <a-entity light="type: ambient; intensity: 1.2; color: #ffffff"></a-entity>
-            <a-entity light="type: directional; intensity: 1.5; position='2 4 4'"></a-entity>
+            
+            <a-entity light="type: directional; intensity: 1.5" position="2 4 4"></a-entity>
+
             <a-entity camera>
                 <a-entity id="hud-container" visible="false" position="0 0 -6">
                     <a-video
@@ -303,10 +311,11 @@
                         position="0 1.5 -2" 
                         material="shader: flat; src: #vid; depthWrite: false;"
                     ></a-video>
+                    
                     <a-entity
                         id="animatedModel"
                         gltf-model="#miModelo"
-                        scale="0.02 0.02 0.02"
+                        scale="0.5 0.5 0.5"
                         position="0 -1 0" 
                         rotation="0 0 0" 
                         animation-mixer="loop: repeat"
