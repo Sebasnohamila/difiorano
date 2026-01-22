@@ -22,10 +22,10 @@
             /* --- PANTALLA DE CARGA (SPLASH SCREEN) --- */
             #splash-screen {
                 position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-                background-color: #ffffff; /* Fondo blanco limpio estilo Apple */
+                background-color: #ffffff;
                 z-index: 9998;
                 display: flex; 
-                flex-direction: column; /* Elementos uno debajo del otro */
+                flex-direction: column;
                 justify-content: center; 
                 align-items: center;
                 transition: opacity 0.8s ease-in-out, visibility 0.8s;
@@ -33,18 +33,18 @@
 
             /* LOGO */
             #splash-screen img { 
-                width: 120px; /* Tamaño más contenido y elegante */
+                width: 120px;
                 height: auto; 
                 margin-bottom: 40px;
             }
             
-            /* SPINNER DE CARGA ESTILO IOS */
+            /* SPINNER */
             .spinner {
                 width: 30px;
                 height: 30px;
-                border: 3px solid rgba(0, 0, 0, 0.1); /* Gris muy suave */
+                border: 3px solid rgba(0, 0, 0, 0.1);
                 border-radius: 50%;
-                border-top-color: #555; /* Gris oscuro girando */
+                border-top-color: #555;
                 animation: spin 1s ease-in-out infinite;
                 margin-bottom: 15px;
             }
@@ -53,22 +53,22 @@
                 to { transform: rotate(360deg); }
             }
 
-            /* TEXTO DE PORCENTAJE */
+            /* TEXTO DE PORCENTAJE (MODIFICADO) */
             #loading-text {
                 color: #888;
                 font-size: 14px;
-                font-weight: 500;
-                letter-spacing: 0.5px;
+                font-weight: 600; /* Un poco más grueso para mayúsculas */
+                letter-spacing: 1px; /* Espaciado para que se lea mejor en mayúsculas */
+                text-transform: uppercase; /* Fuerza mayúsculas por CSS */
             }
 
-            /* CLASE PARA OCULTAR */
             .hidden-splash {
                 opacity: 0 !important;
                 visibility: hidden;
                 pointer-events: none;
             }
 
-            /* --- BOTÓN DE INICIO (MODIFICADO A NEGRO) --- */
+            /* --- BOTÓN DE INICIO (NEGRO Y MAYÚSCULAS) --- */
             #start-button {
                 position: fixed;
                 bottom: 60px; 
@@ -76,32 +76,30 @@
                 transform: translateX(-50%) scale(0.95);
                 z-index: 9999;
                 
-                /* CAMBIO: Fondo Negro */
                 background-color: #000000; 
                 color: white;
-                font-size: 17px;
-                font-weight: 600; /* Semi-bold */
+                font-size: 16px; /* Ajuste leve para compensar mayúsculas */
+                font-weight: 700; /* Bold */
+                letter-spacing: 1px; /* Espaciado elegante */
+                text-transform: uppercase; /* Fuerza mayúsculas */
+                
                 padding: 16px 32px;
                 border: none;
-                border-radius: 40px; /* Forma de píldora */
-                
-                /* CAMBIO: Sombra negra suave en lugar de azul */
+                border-radius: 40px;
                 box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4); 
                 
-                opacity: 0; /* Empieza invisible */
+                opacity: 0;
                 transition: transform 0.2s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 0.5s ease;
                 cursor: pointer;
-                display: none; /* Oculto hasta que AR esté listo */
+                display: none;
                 -webkit-font-smoothing: antialiased;
             }
 
             #start-button:active {
-                transform: translateX(-50%) scale(0.92); /* Efecto de pulsación */
-                /* CAMBIO: Gris oscuro al presionar para dar feedback */
+                transform: translateX(-50%) scale(0.92);
                 background-color: #333333; 
             }
             
-            /* Cuando AR carga, mostramos el botón con animación */
             .arjs-ready #start-button { 
                 display: block; 
                 opacity: 1;
@@ -131,15 +129,12 @@
         </style>
 
         <script>
-            // --- LÓGICA DE BARRA DE PROGRESO SIMULADA ---
             document.addEventListener("DOMContentLoaded", () => {
                 const percentText = document.getElementById('percent');
                 let progress = 0;
                 
-                // Simula una carga hasta el 90% mientras carga el backend
                 const interval = setInterval(() => {
                     if (progress < 90) {
-                        // Carga rápida al inicio, lenta al final
                         let increment = Math.random() * (progress < 50 ? 5 : 2); 
                         progress += increment;
                         if (progress > 99) progress = 99;
@@ -147,19 +142,14 @@
                     }
                 }, 150);
 
-                // Función para completar la carga al 100%
                 window.finishLoading = () => {
                     clearInterval(interval);
                     percentText.innerText = "100%";
-                    setTimeout(() => {
-                        // Aquí podríamos ocultar algo si quisiéramos
-                    }, 500);
                 };
             });
 
             AFRAME.registerComponent('master-controller', {
                 init: function () {
-                    // Referencias
                     this.startButton = document.querySelector("#start-button");
                     this.splash = document.querySelector("#splash-screen"); 
                     this.hud = document.querySelector("#hud-container");
@@ -168,40 +158,26 @@
                     this.waButton = document.querySelector("#whatsapp-button");
                     
                     this.isUnlocked = false; 
-                    
-                    // Variables para gestos
                     this.startX = 0;
                     this.startY = 0;
                     this.initialDistance = 0;
                     this.initialScaleVector = new THREE.Vector3();
 
-                    // --- LÓGICA DEL BOTÓN DE INICIO ---
                     this.startButton.addEventListener('click', () => {
                         if (this.isUnlocked) return;
                         
-                        console.log("¡Experiencia Iniciada!");
                         this.isUnlocked = true;
-                        
-                        // 1. Ocultar botón de inicio con fade
                         this.startButton.style.opacity = '0';
                         setTimeout(() => { this.startButton.style.display = 'none'; }, 300);
-
-                        // 2. DESVANECER PANTALLA BLANCA (SPLASH)
                         this.splash.classList.add('hidden-splash');
-
-                        // 3. Mostrar HUD de la experiencia
                         this.hud.setAttribute('visible', 'true');
                         this.waButton.style.display = "block"; 
-                        
-                        // 4. Reproducir video y animación
                         this.vid.play();
                         if (this.model) this.model.setAttribute('animation-mixer', 'timeScale: 1');
                     });
 
-                    // --- GESTOS TÁCTILES (Mismo código original) ---
                     window.addEventListener('touchstart', (e) => {
                         if (!this.isUnlocked) return;
-
                         if(e.touches.length === 1) {
                             this.startX = e.touches[0].clientX;
                             this.startY = e.touches[0].clientY;
@@ -215,44 +191,26 @@
 
                     window.addEventListener('touchmove', (e) => {
                         if (!this.isUnlocked || !this.model) return;
-                        
                         if(e.touches.length === 1) {
                             var deltaX = e.touches[0].clientX - this.startX;
                             var deltaY = e.touches[0].clientY - this.startY;
-
                             this.startX = e.touches[0].clientX;
                             this.startY = e.touches[0].clientY;
 
-                            // RESTRICCIÓN HORIZONTAL (EJE Y)
                             var newRotationY = this.model.object3D.rotation.y + (deltaX * 0.01);
-                            const minY = -0.8;
-                            const maxY = 0.8;
-                            this.model.object3D.rotation.y = Math.min(Math.max(newRotationY, minY), maxY);
+                            this.model.object3D.rotation.y = Math.min(Math.max(newRotationY, -0.8), 0.8);
 
-                            // RESTRICCIÓN VERTICAL (EJE X)
                             var newRotationX = this.model.object3D.rotation.x + (deltaY * 0.01);
-                            const minX = 0.0; 
-                            const maxX = 0.8;
-                            this.model.object3D.rotation.x = Math.min(Math.max(newRotationX, minX), maxX);
+                            this.model.object3D.rotation.x = Math.min(Math.max(newRotationX, 0.0), 0.8);
                         } 
                         else if (e.touches.length === 2 && this.initialDistance > 0) {
                              var dx = e.touches[0].clientX - e.touches[1].clientX;
                              var dy = e.touches[0].clientY - e.touches[1].clientY;
-                             var currentDistance = Math.sqrt(dx * dx + dy * dy);
-                             var scaleFactor = currentDistance / this.initialDistance;
+                             var scaleFactor = Math.sqrt(dx*dx + dy*dy) / this.initialDistance;
 
-                             var newX = this.initialScaleVector.x * scaleFactor;
-                             var newY = this.initialScaleVector.y * scaleFactor;
-                             var newZ = this.initialScaleVector.z * scaleFactor;
-
-                             const minScale = 0.005; 
-                             const maxScale = 0.35;  
-
-                             newX = Math.min(Math.max(newX, minScale), maxScale);
-                             newY = Math.min(Math.max(newY, minScale), maxScale);
-                             newZ = Math.min(Math.max(newZ, minScale), maxScale);
-
-                             this.model.object3D.scale.set(newX, newY, newZ);
+                             var newS = this.initialScaleVector.x * scaleFactor;
+                             newS = Math.min(Math.max(newS, 0.005), 0.35);
+                             this.model.object3D.scale.set(newS, newS, newS);
                         }
                     });
                 }
@@ -262,14 +220,11 @@
                 init: function () {
                     var videoEl = document.querySelector("#vid");
                     var planeEl = this.el; 
-                    
                     var applySize = function() {
                         if (videoEl.videoWidth > 0 && videoEl.videoHeight > 0) {
                             var aspectRatio = videoEl.videoHeight / videoEl.videoWidth;
                             var isPortrait = window.innerHeight > window.innerWidth;
-                            
                             var scaleFactor = isPortrait ? 3.1 : 5; 
-                            
                             planeEl.setAttribute('width', scaleFactor); 
                             planeEl.setAttribute('height', aspectRatio * scaleFactor);
                         }
@@ -281,16 +236,9 @@
             });
 
             window.addEventListener('arjs-video-loaded', function(e) {
-                // Finalizar carga simulada
                 if(window.finishLoading) window.finishLoading();
-                
-                // Pequeño retardo para que el usuario vea el 100%
-                setTimeout(() => { 
-                    document.body.classList.add('arjs-ready'); 
-                }, 800);
+                setTimeout(() => { document.body.classList.add('arjs-ready'); }, 800);
             });
-
-            // Fallback de seguridad
             setTimeout(() => { 
                 if(window.finishLoading) window.finishLoading();
                 document.body.classList.add('arjs-ready'); 
@@ -303,10 +251,10 @@
             <img src="assets/logo.png" alt="Bhastian Logo">
             
             <div class="spinner"></div>
-            <div id="loading-text">Cargando... <span id="percent">0%</span></div>
+            <div id="loading-text">CARGANDO <span id="percent">0%</span></div>
         </div>
 
-        <button id="start-button">Ver experiencia</button>
+        <button id="start-button">VER EXPERIENCIA</button>
 
         <a href="https://wa.me/593983088889?text=Hola%20Bhastian,%20vi%20su%20experiencia%20AR%20y%20me%20interesa." 
            target="_blank" 
@@ -333,14 +281,12 @@
 
             <a-entity camera>
                 <a-entity id="hud-container" visible="false" position="0 0 -6">
-                    
                     <a-video
                         src="#vid"
                         fix-video-size
                         position="0 1.5 -2" 
                         material="shader: flat; src: #vid; depthWrite: false;"
                     ></a-video>
-
                     <a-entity
                         id="animatedModel"
                         gltf-model="#miModelo"
@@ -349,10 +295,8 @@
                         rotation="0 0 0" 
                         animation-mixer="loop: repeat"
                     ></a-entity>
-
                 </a-entity>
             </a-entity>
-
-            </a-scene>
+        </a-scene>
     </body>
 </html>
