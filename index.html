@@ -2,148 +2,142 @@
 <html>
     <head>
         <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-        <title>Bhastian AR Experience</title>
-
+        <title>Experiencia AR</title>
+        
         <script src="https://aframe.io/releases/1.0.4/aframe.min.js"></script>
         <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
         <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
 
         <style>
-            body { margin: 0; overflow: hidden; touch-action: none; font-family: 'Arial', sans-serif; }
+            body { margin: 0; overflow: hidden; touch-action: none; font-family: Arial, sans-serif;}
             
-            /* --- PANTALLA DE CARGA --- */
-            #loader-screen {
+            /* --- PANTALLA DE CARGA (Estilo Rueda + Porcentaje) --- */
+            #loading-overlay {
                 position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-                background-color: #000; /* Fondo negro o blanco según prefieras */
-                z-index: 9999;
+                background-color: white; z-index: 9999;
                 display: flex; flex-direction: column; justify-content: center; align-items: center;
-                color: white;
                 transition: opacity 0.5s ease-out;
             }
-
-            /* Rueda de carga (Spinner) */
-            .spinner {
-                border: 8px solid rgba(255, 255, 255, 0.1);
-                border-left-color: #ffffff; /* Color de la rueda */
+            
+            .loader-wheel {
+                border: 8px solid #f3f3f3;
+                border-top: 8px solid #000; /* Color de la rueda */
                 border-radius: 50%;
-                width: 60px;
-                height: 60px;
-                animation: spin 1.2s linear infinite;
+                width: 50px; height: 50px;
+                animation: spin 1s linear infinite;
                 margin-bottom: 20px;
             }
-
+            
             @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-            .loading-text { font-size: 18px; letter-spacing: 1px; margin-bottom: 10px; }
-            .percentage { font-size: 24px; font-weight: bold; color: #f1c40f; margin-bottom: 30px; }
+            .loading-text { font-size: 18px; margin-bottom: 10px; color: #333; }
+            .percentage { font-size: 24px; font-weight: bold; color: #000; margin-bottom: 20px; }
 
-            /* Botón Ver Experiencia */
-            #start-btn {
-                display: none; /* Oculto al inicio */
-                padding: 15px 30px;
-                background-color: #f1c40f; /* Color dorado */
-                color: #000;
+            /* Botón para iniciar (aparece al finalizar carga) */
+            #start-button {
+                display: none;
+                padding: 15px 40px;
+                background-color: #000;
+                color: #fff;
                 font-size: 18px;
-                font-weight: bold;
                 border: none;
                 border-radius: 5px;
                 cursor: pointer;
-                text-transform: uppercase;
-                box-shadow: 0px 4px 15px rgba(241, 196, 15, 0.4);
-                animation: pulse 2s infinite;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.3);
             }
+            #start-button:active { transform: scale(0.95); }
 
-            @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
-
-            /* --- BOTÓN WHATSAPP --- */
+            /* --- BOTÓN WHATSAPP (Tu estilo original) --- */
             #whatsapp-button {
                 display: none; 
                 position: fixed; bottom: 15px; left: 15px; z-index: 9998;
                 background-color: transparent; border: none; padding: 0;
             }
-            #whatsapp-button img { width: 50px; height: 50px; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.5)); }
+            #whatsapp-button img {
+                width: 30px; height: 30px;
+                filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.5)); 
+            }
         </style>
 
         <script>
-            // Lógica de Carga y Simulación de Porcentaje
+            // --- CONTROLADOR DE CARGA Y UI ---
             document.addEventListener("DOMContentLoaded", () => {
-                const percentageEl = document.querySelector('.percentage');
-                const startBtn = document.querySelector('#start-btn');
-                const spinner = document.querySelector('.spinner');
-                const loadingText = document.querySelector('.loading-text');
-                const loaderScreen = document.querySelector('#loader-screen');
-                let progress = 0;
-                
-                // Simular carga visual
-                const interval = setInterval(() => {
-                    // Carga rápida hasta el 90%
-                    if (progress < 90) {
-                        progress += Math.floor(Math.random() * 5) + 1;
-                        if(progress > 90) progress = 90;
-                        percentageEl.innerText = progress + "%";
-                    } 
-                }, 100);
+                const percentText = document.querySelector('.percentage');
+                const startBtn = document.querySelector('#start-button');
+                const loaderWheel = document.querySelector('.loader-wheel');
+                const loadText = document.querySelector('.loading-text');
+                const overlay = document.querySelector('#loading-overlay');
+                let loadProgress = 0;
 
-                // Escuchar cuando A-Frame y la ventana estén completamente listos
+                // 1. Simulación visual de carga (mientras carga el navegador)
+                const interval = setInterval(() => {
+                    if (loadProgress < 95) {
+                        loadProgress += Math.floor(Math.random() * 3) + 1;
+                        percentText.innerText = loadProgress + "%";
+                    }
+                }, 50);
+
+                // 2. Cuando todo el contenido (assets, scripts) ha cargado real
                 window.addEventListener('load', () => {
-                    // Completar al 100% cuando todo haya cargado realmente
                     clearInterval(interval);
-                    percentageEl.innerText = "100%";
+                    percentText.innerText = "100%";
                     
+                    // Pequeña pausa para ver el 100% y mostrar botón
                     setTimeout(() => {
-                        // Cambiar interfaz para mostrar el botón
-                        spinner.style.display = 'none';
-                        loadingText.style.display = 'none';
-                        percentageEl.style.display = 'none';
-                        startBtn.style.display = 'block';
-                    }, 500);
+                        loaderWheel.style.display = 'none';
+                        loadText.innerText = "Cargando experiencia... ¡Listo!";
+                        loadText.style.display = 'none';
+                        percentText.style.display = 'none';
+                        startBtn.style.display = 'block'; // Mostrar botón
+                    }, 300);
                 });
 
-                // Acción del botón
+                // 3. Acción al pulsar "VER EXPERIENCIA"
                 startBtn.addEventListener('click', () => {
                     // Ocultar pantalla de carga
-                    loaderScreen.style.opacity = '0';
-                    setTimeout(() => { loaderScreen.style.display = 'none'; }, 500);
+                    overlay.style.opacity = '0';
+                    setTimeout(() => { overlay.style.display = 'none'; }, 500);
 
-                    // Iniciar experiencia en el componente
-                    const sceneEl = document.querySelector('a-scene');
-                    sceneEl.emit('start-experience');
+                    // INICIAR EXPERIENCIA
+                    const video = document.querySelector("#vid");
+                    const model = document.querySelector("#animatedModel");
+                    const hud = document.querySelector("#hud-container");
+                    const waBtn = document.querySelector("#whatsapp-button");
+                    const controller = document.querySelector("[master-controller]").components['master-controller'];
+
+                    // Mostrar contenido
+                    hud.setAttribute('visible', 'true');
+                    waBtn.style.display = "block";
+                    
+                    // Reproducir video (Importante: hacerlo aquí dentro del click)
+                    video.play().then(() => {
+                        console.log("Video reproduciendo");
+                    }).catch(e => {
+                        console.error("Error al reproducir video:", e);
+                    });
+
+                    // Iniciar animación del modelo
+                    if(model) model.setAttribute('animation-mixer', 'timeScale: 1');
+
+                    // Desbloquear controles táctiles
+                    if(controller) controller.isUnlocked = true;
                 });
             });
 
+            // --- TU CONTROLADOR ORIGINAL (Simplificado sin marcadores) ---
             AFRAME.registerComponent('master-controller', {
                 init: function () {
-                    this.hud = document.querySelector("#hud-container");
-                    this.vid = document.querySelector("#vid");
                     this.model = document.querySelector("#animatedModel");
-                    this.waButton = document.querySelector("#whatsapp-button");
-                    
-                    this.isUnlocked = false; 
+                    this.isUnlocked = false; // Se desbloquea con el botón de inicio
                     
                     this.startX = 0;
                     this.startY = 0;
                     this.initialDistance = 0;
                     this.initialScaleVector = new THREE.Vector3();
 
-                    // Escuchar el evento personalizado del botón de inicio
-                    this.el.sceneEl.addEventListener('start-experience', () => {
-                        console.log("Experiencia iniciada por usuario");
-                        this.isUnlocked = true;
-                        
-                        // Mostrar HUD y Botones
-                        this.hud.setAttribute('visible', 'true');
-                        this.waButton.style.display = "block"; 
-                        
-                        // Reproducir video (ahora permitido porque hubo interacción del usuario)
-                        this.vid.play();
-                        
-                        if (this.model) this.model.setAttribute('animation-mixer', 'timeScale: 1');
-                    });
-
-                    // --- MANTENEMOS TU LÓGICA DE INTERACCIÓN TÁCTIL ---
+                    // Listeners Táctiles (Tus eventos originales)
                     window.addEventListener('touchstart', (e) => {
                         if (!this.isUnlocked) return;
-
                         if(e.touches.length === 1) {
                             this.startX = e.touches[0].clientX;
                             this.startY = e.touches[0].clientY;
@@ -161,16 +155,14 @@
                         if(e.touches.length === 1) {
                             var deltaX = e.touches[0].clientX - this.startX;
                             var deltaY = e.touches[0].clientY - this.startY;
-
                             this.startX = e.touches[0].clientX;
                             this.startY = e.touches[0].clientY;
 
-                            // Rotación Y (Horizontal)
+                            // Rotación
                             var newRotationY = this.model.object3D.rotation.y + (deltaX * 0.01);
                             const minY = -0.8; const maxY = 0.8;
                             this.model.object3D.rotation.y = Math.min(Math.max(newRotationY, minY), maxY);
 
-                            // Rotación X (Vertical)
                             var newRotationX = this.model.object3D.rotation.x + (deltaY * 0.01);
                             const minX = 0.0; const maxX = 0.8;
                             this.model.object3D.rotation.x = Math.min(Math.max(newRotationX, minX), maxX);
@@ -186,7 +178,6 @@
                              var newZ = this.initialScaleVector.z * scaleFactor;
 
                              const minScale = 0.005; const maxScale = 0.35;  
-
                              newX = Math.min(Math.max(newX, minScale), maxScale);
                              newY = Math.min(Math.max(newY, minScale), maxScale);
                              newZ = Math.min(Math.max(newZ, minScale), maxScale);
@@ -200,14 +191,13 @@
             AFRAME.registerComponent('fix-video-size', {
                 init: function () {
                     var videoEl = document.querySelector("#vid");
-                    var planeEl = this.el; 
-                    
+                    var planeEl = this.el;
                     var applySize = function() {
                         if (videoEl.videoWidth > 0 && videoEl.videoHeight > 0) {
                             var aspectRatio = videoEl.videoHeight / videoEl.videoWidth;
                             var isPortrait = window.innerHeight > window.innerWidth;
-                            var scaleFactor = isPortrait ? 3.1 : 5; 
-                            planeEl.setAttribute('width', scaleFactor); 
+                            var scaleFactor = isPortrait ? 3.1 : 5;
+                            planeEl.setAttribute('width', scaleFactor);
                             planeEl.setAttribute('height', aspectRatio * scaleFactor);
                         }
                     };
@@ -220,11 +210,11 @@
     </head>
 
     <body>
-        <div id="loader-screen">
-            <div class="spinner"></div>
-            <div class="loading-text">CARGANDO EXPERIENCIA...</div>
+        <div id="loading-overlay">
+            <div class="loader-wheel"></div>
+            <div class="loading-text">Cargando experiencia...</div>
             <div class="percentage">0%</div>
-            <button id="start-btn">VER EXPERIENCIA</button>
+            <button id="start-button">VER EXPERIENCIA</button>
         </div>
 
         <a href="https://wa.me/593983088889?text=Hola%20Bhastian,%20vi%20su%20experiencia%20AR%20y%20me%20interesa." 
@@ -239,25 +229,23 @@
             loading-screen="enabled: false;"
             arjs='sourceType: webcam; debugUIEnabled: false;'
             renderer="logarithmicDepthBuffer: true; colorManagement: true; antialias: true;" 
-            id="scene" 
             embedded 
         >
             <a-assets>
-                <video id="vid" src="assets/asset.mp4" preload="auto" loop crossorigin webkit-playsinline playsinline></video>
+                <video id="vid" src="assets/asset.mp4" preload="auto" loop crossorigin playsinline webkit-playsinline></video>
                 <a-asset-item id="miModelo" src="assets/mi-modelo.glb"></a-asset-item>
             </a-assets>
 
             <a-entity light="type: ambient; intensity: 1.2; color: #ffffff"></a-entity>
             <a-entity light="type: directional; intensity: 1.5; position="2 4 4"></a-entity>
 
-            <a-entity camera position="0 0 0" look-controls="enabled: false">
-                
+            <a-entity camera>
                 <a-entity id="hud-container" visible="false" position="0 0 -6">
                     
                     <a-video
                         src="#vid"
                         fix-video-size
-                        position="0 1.5 -2" 
+                        position="0 1.5 -2"
                         material="shader: flat; src: #vid; depthWrite: false;"
                     ></a-video>
 
@@ -265,8 +253,8 @@
                         id="animatedModel"
                         gltf-model="#miModelo"
                         scale="0.02 0.02 0.02"
-                        position="0 -1 0" 
-                        rotation="0 0 0" 
+                        position="0 -1 0"
+                        rotation="0 0 0"
                         animation-mixer="loop: repeat"
                     ></a-entity>
 
