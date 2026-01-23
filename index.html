@@ -3,9 +3,11 @@
     <head>
         <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
         
-        <script src="https://aframe.io/releases/1.0.4/aframe.min.js"></script>
+        <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+        
         <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
-        <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
+        
+        <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.0.0/dist/aframe-extras.min.js"></script>
 
         <style>
             body { margin: 0; overflow: hidden; touch-action: none; font-family: Arial, sans-serif;}
@@ -19,11 +21,12 @@
             #splash-screen img { max-width: 60%; height: auto; }
             .arjs-ready #splash-screen { opacity: 0; pointer-events: none; }
 
+            /* ESTILOS DEL BOTÓN DE WHATSAPP */
             #whatsapp-button {
-                display: block; /* Visible por defecto para pruebas */
+                display: none; 
                 position: fixed;
                 bottom: 15px; 
-                left: 15px;    
+                left: 15px;   
                 z-index: 9998;
                 background-color: transparent;
                 padding: 0;
@@ -50,23 +53,29 @@
                     this.model = document.querySelector("#animatedModel");
                     this.waButton = document.querySelector("#whatsapp-button");
                     
-                    // --- MODO DEPURACIÓN ---
-                    // Iniciamos como "desbloqueado" para que veas el modelo sin marcador
-                    this.isUnlocked = true; 
+                    this.isUnlocked = false; 
                     
-                    // Si tienes el marcador, esto seguirá funcionando
-                    this.marker.addEventListener('markerFound', () => {
-                        console.log("¡Marcador detectado!");
-                        this.vid.play();
-                    });
-
-                    // Variables para gestos
                     this.startX = 0;
                     this.startY = 0;
                     this.initialDistance = 0;
                     this.initialScaleVector = new THREE.Vector3();
 
+                    this.marker.addEventListener('markerFound', () => {
+                        if (this.isUnlocked) return;
+                        console.log("¡Marcador detectado!");
+                        this.isUnlocked = true;
+                        
+                        this.hud.setAttribute('visible', 'true');
+                        this.waButton.style.display = "block"; 
+                        
+                        this.vid.play();
+                        // Nota: En versiones nuevas de extras, a veces el animation-mixer ya arranca solo si está en el HTML
+                        if (this.model) this.model.setAttribute('animation-mixer', 'timeScale: 1');
+                    });
+
                     window.addEventListener('touchstart', (e) => {
+                        if (!this.isUnlocked) return;
+
                         if(e.touches.length === 1) {
                             this.startX = e.touches[0].clientX;
                             this.startY = e.touches[0].clientY;
@@ -79,6 +88,8 @@
                     });
 
                     window.addEventListener('touchmove', (e) => {
+                        if (!this.isUnlocked) return;
+                        
                         if(e.touches.length === 1) {
                             var deltaX = e.touches[0].clientX - this.startX;
                             var deltaY = e.touches[0].clientY - this.startY;
@@ -86,11 +97,14 @@
                             this.startX = e.touches[0].clientX;
                             this.startY = e.touches[0].clientY;
 
+                            // --- ROTACIÓN Y (Horizontal) ---
                             var newRotationY = this.model.object3D.rotation.y + (deltaX * 0.01);
                             const minY = -0.8;
                             const maxY = 0.8;
                             this.model.object3D.rotation.y = Math.min(Math.max(newRotationY, minY), maxY);
 
+
+                            // --- ROTACIÓN X (Vertical) ---
                             var newRotationX = this.model.object3D.rotation.x + (deltaY * 0.01);
                             const minX = 0.0; 
                             const maxX = 0.8;
@@ -106,9 +120,8 @@
                              var newY = this.initialScaleVector.y * scaleFactor;
                              var newZ = this.initialScaleVector.z * scaleFactor;
 
-                             // Aumenté el rango de escala para que puedas agrandarlo más
                              const minScale = 0.005; 
-                             const maxScale = 3.0;  
+                             const maxScale = 0.35;  
 
                              newX = Math.min(Math.max(newX, minScale), maxScale);
                              newY = Math.min(Math.max(newY, minScale), maxScale);
@@ -129,7 +142,9 @@
                         if (videoEl.videoWidth > 0 && videoEl.videoHeight > 0) {
                             var aspectRatio = videoEl.videoHeight / videoEl.videoWidth;
                             var isPortrait = window.innerHeight > window.innerWidth;
+                            
                             var scaleFactor = isPortrait ? 3.1 : 5; 
+                            
                             planeEl.setAttribute('width', scaleFactor); 
                             planeEl.setAttribute('height', aspectRatio * scaleFactor);
                         }
@@ -143,15 +158,17 @@
             window.addEventListener('arjs-video-loaded', function(e) {
                 setTimeout(() => { document.body.classList.add('arjs-ready'); }, 1000);
             });
-            // Fallback por si arjs tarda
+            // Fallback por si el evento no dispara
             setTimeout(() => { document.body.classList.add('arjs-ready'); }, 6000);
         </script>
     </head>
 
     <body>
-        <div id="splash-screen"><img src="assets/logo.png" alt="Cargando..."></div>
+        <div id="splash-screen"><img src="assets/logo.png" alt="Cargando Bhastian AR..."></div>
 
-        <a href="https://wa.me/593983088889" target="_blank" id="whatsapp-button">
+        <a href="https://wa.me/593983088889?text=Hola%20Bhastian,%20vi%20su%20experiencia%20AR%20y%20me%20interesa." 
+           target="_blank" 
+           id="whatsapp-button">
            <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp Icon">
         </a>
 
@@ -165,15 +182,16 @@
             embedded 
         >
             <a-assets>
-                <video id="vid" src="assets/asset.mp4" preload="auto" loop crossorigin webkit-playsinline autoplay playsinline></video>
-                <a-asset-item id="miModelo" src="assets/FIMOLA-v1.glb"></a-asset-item>
+                <video id="vid" src="assets/asset.mp4" preload="auto" loop crossorigin="anonymous" webkit-playsinline autoplay playsinline></video>
+                <a-asset-item id="miModelo" src="assets/mi-modelo.glb"></a-asset-item>
             </a-assets>
 
             <a-entity light="type: ambient; intensity: 1.2; color: #ffffff"></a-entity>
+            
             <a-entity light="type: directional; intensity: 1.5" position="2 4 4"></a-entity>
 
             <a-entity camera>
-                <a-entity id="hud-container" visible="true" position="0 0 -4">
+                <a-entity id="hud-container" visible="false" position="0 0 -6">
                     
                     <a-video
                         src="#vid"
@@ -185,7 +203,7 @@
                     <a-entity
                         id="animatedModel"
                         gltf-model="#miModelo"
-                        scale="0.5 0.5 0.5"
+                        scale="0.02 0.02 0.02"
                         position="0 -1 0" 
                         rotation="0 0 0" 
                         animation-mixer="loop: repeat"
