@@ -5,41 +5,40 @@
         <title>Experiencia AR</title>
         
         <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
-        
         <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
-        
         <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
 
         <style>
-            body { margin: 0; overflow: hidden; touch-action: none; font-family: Arial, sans-serif; background-color: transparent !important; }
+            body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
             
-            /* PANTALLA DE CARGA (Restaurada) */
+            /* PANTALLA DE CARGA */
             #splash-screen {
                 position: fixed; top: 0; left: 0; width: 100%; height: 100%;
                 background-color: white; z-index: 9999;
                 display: flex; flex-direction: column; justify-content: center; align-items: center;
-                transition: opacity 1s ease-out;
+                transition: opacity 0.5s ease-out; /* Transición rápida */
             }
             #splash-screen img { max-width: 50%; height: auto; margin-bottom: 20px; }
-            #splash-screen p { color: #333; font-weight: bold; }
-            .arjs-ready #splash-screen { opacity: 0; pointer-events: none; }
-
+            #splash-screen p { color: #333; font-weight: bold; font-size: 14px;}
+            
             /* BOTÓN WHATSAPP */
             #whatsapp-button {
                 display: none; 
                 position: fixed; bottom: 15px; left: 15px; z-index: 9998;
                 background-color: transparent; border: none; padding: 0;
             }
-            #whatsapp-button img {
-                width: 40px; height: 40px;
-                filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.5)); 
-            }
+            #whatsapp-button img { width: 50px; height: 50px; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.5)); }
         </style>
 
         <script>
-            // --- CONFIGURACIÓN CRÍTICA PARA DRACO ---
-            // Forzamos la ruta del decodificador para que A-Frame sepa cómo abrir tu GLB comprimido
-            AFRAME.scenes[0]?.systems.gltf-model.dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.4.1/');
+            // --- CONFIGURACIÓN DRACO ---
+            // Le decimos a A-Frame dónde buscar los decodificadores antes de que cargue la escena
+            AFRAME.registerComponent('draco-loader-config', {
+                init: function () {
+                    var loader = this.el.systems['gltf-model'].getDracoLoader();
+                    loader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
+                }
+            });
 
             AFRAME.registerComponent('master-controller', {
                 init: function () {
@@ -49,15 +48,9 @@
                     this.vid = document.querySelector("#vid");
                     this.model = document.querySelector("#animatedModel");
                     this.waButton = document.querySelector("#whatsapp-button");
-                    
                     this.isUnlocked = false; 
-                    
-                    // Variables táctiles
-                    this.startX = 0; this.startY = 0;
-                    this.initialDistance = 0;
-                    this.initialScaleVector = new THREE.Vector3();
 
-                    // Detectar marcador
+                    // --- DETECCIÓN DE MARCADOR ---
                     this.marker.addEventListener('markerFound', () => {
                         if (self.isUnlocked) return;
                         console.log("¡Marcador encontrado!");
@@ -66,18 +59,22 @@
                         self.hud.setAttribute('visible', 'true');
                         self.waButton.style.display = "block"; 
                         
-                        // Reproducir video (requiere interacción previa del usuario en algunos navegadores)
-                        self.vid.play().catch(e => console.log("Click en pantalla para audio/video", e));
+                        // Intentar reproducir video
+                        self.vid.play().catch(e => console.log("Interacción requerida para video"));
                         
+                        // Iniciar animación si existe
                         if (self.model) self.model.setAttribute('animation-mixer', 'timeScale: 1');
                     });
 
-                    // --- GESTOS TÁCTILES ---
+                    // --- GESTOS TÁCTILES (Código original mantenido) ---
+                    this.startX = 0; this.startY = 0;
+                    this.initialDistance = 0;
+                    this.initialScaleVector = new THREE.Vector3();
+
                     window.addEventListener('touchstart', (e) => {
                         if (!self.isUnlocked) return;
                         if(e.touches.length === 1) {
-                            self.startX = e.touches[0].clientX;
-                            self.startY = e.touches[0].clientY;
+                            self.startX = e.touches[0].clientX; self.startY = e.touches[0].clientY;
                         } else if (e.touches.length === 2) {
                             var dx = e.touches[0].clientX - e.touches[1].clientX;
                             var dy = e.touches[0].clientY - e.touches[1].clientY;
@@ -88,31 +85,22 @@
 
                     window.addEventListener('touchmove', (e) => {
                         if (!self.isUnlocked) return;
-                        
-                        // Rotación (1 dedo)
                         if(e.touches.length === 1) {
                             var deltaX = e.touches[0].clientX - self.startX;
                             var deltaY = e.touches[0].clientY - self.startY;
-                            self.startX = e.touches[0].clientX;
-                            self.startY = e.touches[0].clientY;
-
-                            var newRotationY = self.model.object3D.rotation.y + (deltaX * 0.01);
-                            self.model.object3D.rotation.y = Math.min(Math.max(newRotationY, -0.8), 0.8);
-
-                            var newRotationX = self.model.object3D.rotation.x + (deltaY * 0.01);
-                            self.model.object3D.rotation.x = Math.min(Math.max(newRotationX, 0.0), 0.8);
+                            self.startX = e.touches[0].clientX; self.startY = e.touches[0].clientY;
+                            
+                            var mod = self.model.object3D;
+                            mod.rotation.y = Math.min(Math.max(mod.rotation.y + (deltaX * 0.01), -0.8), 0.8);
+                            mod.rotation.x = Math.min(Math.max(mod.rotation.x + (deltaY * 0.01), 0.0), 0.8);
                         } 
-                        // Escalado (2 dedos)
                         else if (e.touches.length === 2 && self.initialDistance > 0) {
                              var dx = e.touches[0].clientX - e.touches[1].clientX;
                              var dy = e.touches[0].clientY - e.touches[1].clientY;
-                             var currentDistance = Math.sqrt(dx * dx + dy * dy);
-                             var scaleFactor = currentDistance / self.initialDistance;
-
-                             var newScale = self.initialScaleVector.x * scaleFactor;
-                             newScale = Math.min(Math.max(newScale, 0.005), 0.35);
-
-                             self.model.object3D.scale.set(newScale, newScale, newScale);
+                             var scaleFactor = Math.sqrt(dx*dx + dy*dy) / self.initialDistance;
+                             var s = self.initialScaleVector.x * scaleFactor;
+                             s = Math.min(Math.max(s, 0.005), 0.35);
+                             self.model.object3D.scale.set(s, s, s);
                         }
                     });
                 }
@@ -120,34 +108,27 @@
 
             AFRAME.registerComponent('fix-video-size', {
                 init: function () {
-                    var videoEl = document.querySelector("#vid");
-                    var planeEl = this.el; 
-                    var applySize = function() {
-                        if (videoEl.videoWidth > 0) {
-                            var aspectRatio = videoEl.videoHeight / videoEl.videoWidth;
-                            var scaleFactor = (window.innerHeight > window.innerWidth) ? 3.1 : 5; 
-                            planeEl.setAttribute('width', scaleFactor); 
-                            planeEl.setAttribute('height', aspectRatio * scaleFactor);
+                    var vid = document.querySelector("#vid");
+                    var el = this.el; 
+                    var resize = () => {
+                        if (vid.videoWidth > 0) {
+                            var ar = vid.videoHeight / vid.videoWidth;
+                            var sf = (window.innerHeight > window.innerWidth) ? 3.1 : 5; 
+                            el.setAttribute('width', sf); el.setAttribute('height', ar * sf);
                         }
                     };
-                    videoEl.addEventListener('loadedmetadata', applySize);
-                    window.addEventListener('resize', applySize);
+                    vid.addEventListener('loadedmetadata', resize);
+                    window.addEventListener('resize', resize);
+                    setTimeout(resize, 1000); // Intento extra
                 }
             });
-
-            // Lógica para quitar pantalla de carga
-            window.addEventListener('arjs-video-loaded', function(e) {
-                setTimeout(() => { document.body.classList.add('arjs-ready'); }, 1500);
-            });
-            // Seguridad por si el evento falla
-            setTimeout(() => { document.body.classList.add('arjs-ready'); }, 8000);
         </script>
     </head>
 
     <body>
         <div id="splash-screen">
             <img src="assets/logo.png" alt="Logo">
-            <p>Cargando cámara...</p>
+            <p>Iniciando cámara...</p>
         </div>
 
         <a href="https://wa.me/593983088889?text=Hola..." target="_blank" id="whatsapp-button">
@@ -155,10 +136,11 @@
         </a>
 
         <a-scene
+            draco-loader-config
             master-controller
             vr-mode-ui="enabled: false"
             loading-screen="enabled: false;"
-            arjs='sourceType: webcam; debugUIEnabled: false;'
+            arjs='sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;'
             renderer="logarithmicDepthBuffer: true; colorManagement: true; alpha: true;" 
             id="scene" 
             embedded 
@@ -177,7 +159,7 @@
                         src="#vid"
                         fix-video-size
                         position="0 1.5 -2" 
-                        material="shader: flat; src: #vid; transparent: true;"
+                        material="shader: flat; src: #vid; transparent: true; depthWrite: false;"
                     ></a-video>
 
                     <a-entity
@@ -195,5 +177,21 @@
             </a-marker>
 
         </a-scene>
+
+        <script>
+            // Este script espera 4 segundos y DESTRUYE la pantalla de carga
+            // independientemente de si AR.js avisó o no.
+            window.onload = function() {
+                setTimeout(function() {
+                    var splash = document.getElementById('splash-screen');
+                    if (splash) {
+                        splash.style.opacity = '0';
+                        setTimeout(() => { 
+                            splash.style.display = 'none'; 
+                        }, 500); // Espera que termine la transición de opacidad
+                    }
+                }, 4000); // 4 segundos de espera máxima
+            };
+        </script>
     </body>
 </html>
