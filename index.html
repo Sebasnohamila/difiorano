@@ -2,105 +2,132 @@
 <html>
     <head>
         <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-        <title>Experiencia AR</title>
         
-        <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
+        <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+        
         <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
-        <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
+        
+        <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.0.0/dist/aframe-extras.min.js"></script>
 
         <style>
-            body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
+            body { margin: 0; overflow: hidden; touch-action: none; font-family: Arial, sans-serif;}
             
-            /* PANTALLA DE CARGA */
             #splash-screen {
                 position: fixed; top: 0; left: 0; width: 100%; height: 100%;
                 background-color: white; z-index: 9999;
-                display: flex; flex-direction: column; justify-content: center; align-items: center;
-                transition: opacity 0.5s ease-out; /* Transición rápida */
+                display: flex; justify-content: center; align-items: center;
+                transition: opacity 1s ease-out;
             }
-            #splash-screen img { max-width: 50%; height: auto; margin-bottom: 20px; }
-            #splash-screen p { color: #333; font-weight: bold; font-size: 14px;}
-            
-            /* BOTÓN WHATSAPP */
+            #splash-screen img { max-width: 60%; height: auto; }
+            .arjs-ready #splash-screen { opacity: 0; pointer-events: none; }
+
+            /* ESTILOS DEL BOTÓN DE WHATSAPP */
             #whatsapp-button {
                 display: none; 
-                position: fixed; bottom: 15px; left: 15px; z-index: 9998;
-                background-color: transparent; border: none; padding: 0;
+                position: fixed;
+                bottom: 15px; 
+                left: 15px;   
+                z-index: 9998;
+                background-color: transparent;
+                padding: 0;
+                border: none;
+                transform: none;
+                transition: transform 0.1s;
             }
-            #whatsapp-button img { width: 50px; height: 50px; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.5)); }
+            #whatsapp-button img {
+                width: 30px;  
+                height: 30px;
+                filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.5)); 
+            }
+            #whatsapp-button:active {
+                transform: scale(0.9); 
+            }
         </style>
 
         <script>
-            // --- CONFIGURACIÓN DRACO ---
-            // Le decimos a A-Frame dónde buscar los decodificadores antes de que cargue la escena
-            AFRAME.registerComponent('draco-loader-config', {
-                init: function () {
-                    var loader = this.el.systems['gltf-model'].getDracoLoader();
-                    loader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
-                }
-            });
-
             AFRAME.registerComponent('master-controller', {
                 init: function () {
-                    var self = this;
                     this.marker = document.querySelector("#markerA");
                     this.hud = document.querySelector("#hud-container");
                     this.vid = document.querySelector("#vid");
                     this.model = document.querySelector("#animatedModel");
                     this.waButton = document.querySelector("#whatsapp-button");
+                    
                     this.isUnlocked = false; 
-
-                    // --- DETECCIÓN DE MARCADOR ---
-                    this.marker.addEventListener('markerFound', () => {
-                        if (self.isUnlocked) return;
-                        console.log("¡Marcador encontrado!");
-                        self.isUnlocked = true;
-                        
-                        self.hud.setAttribute('visible', 'true');
-                        self.waButton.style.display = "block"; 
-                        
-                        // Intentar reproducir video
-                        self.vid.play().catch(e => console.log("Interacción requerida para video"));
-                        
-                        // Iniciar animación si existe
-                        if (self.model) self.model.setAttribute('animation-mixer', 'timeScale: 1');
-                    });
-
-                    // --- GESTOS TÁCTILES (Código original mantenido) ---
-                    this.startX = 0; this.startY = 0;
+                    
+                    this.startX = 0;
+                    this.startY = 0;
                     this.initialDistance = 0;
                     this.initialScaleVector = new THREE.Vector3();
 
+                    this.marker.addEventListener('markerFound', () => {
+                        if (this.isUnlocked) return;
+                        console.log("¡Marcador detectado!");
+                        this.isUnlocked = true;
+                        
+                        this.hud.setAttribute('visible', 'true');
+                        this.waButton.style.display = "block"; 
+                        
+                        this.vid.play();
+                        // Nota: En versiones nuevas de extras, a veces el animation-mixer ya arranca solo si está en el HTML
+                        if (this.model) this.model.setAttribute('animation-mixer', 'timeScale: 1');
+                    });
+
                     window.addEventListener('touchstart', (e) => {
-                        if (!self.isUnlocked) return;
+                        if (!this.isUnlocked) return;
+
                         if(e.touches.length === 1) {
-                            self.startX = e.touches[0].clientX; self.startY = e.touches[0].clientY;
+                            this.startX = e.touches[0].clientX;
+                            this.startY = e.touches[0].clientY;
                         } else if (e.touches.length === 2) {
                             var dx = e.touches[0].clientX - e.touches[1].clientX;
                             var dy = e.touches[0].clientY - e.touches[1].clientY;
-                            self.initialDistance = Math.sqrt(dx * dx + dy * dy);
-                            self.initialScaleVector.copy(self.model.object3D.scale);
+                            this.initialDistance = Math.sqrt(dx * dx + dy * dy);
+                            this.initialScaleVector.copy(this.model.object3D.scale);
                         }
                     });
 
                     window.addEventListener('touchmove', (e) => {
-                        if (!self.isUnlocked) return;
+                        if (!this.isUnlocked) return;
+                        
                         if(e.touches.length === 1) {
-                            var deltaX = e.touches[0].clientX - self.startX;
-                            var deltaY = e.touches[0].clientY - self.startY;
-                            self.startX = e.touches[0].clientX; self.startY = e.touches[0].clientY;
-                            
-                            var mod = self.model.object3D;
-                            mod.rotation.y = Math.min(Math.max(mod.rotation.y + (deltaX * 0.01), -0.8), 0.8);
-                            mod.rotation.x = Math.min(Math.max(mod.rotation.x + (deltaY * 0.01), 0.0), 0.8);
+                            var deltaX = e.touches[0].clientX - this.startX;
+                            var deltaY = e.touches[0].clientY - this.startY;
+
+                            this.startX = e.touches[0].clientX;
+                            this.startY = e.touches[0].clientY;
+
+                            // --- ROTACIÓN Y (Horizontal) ---
+                            var newRotationY = this.model.object3D.rotation.y + (deltaX * 0.01);
+                            const minY = -0.8;
+                            const maxY = 0.8;
+                            this.model.object3D.rotation.y = Math.min(Math.max(newRotationY, minY), maxY);
+
+
+                            // --- ROTACIÓN X (Vertical) ---
+                            var newRotationX = this.model.object3D.rotation.x + (deltaY * 0.01);
+                            const minX = 0.0; 
+                            const maxX = 0.8;
+                            this.model.object3D.rotation.x = Math.min(Math.max(newRotationX, minX), maxX);
                         } 
-                        else if (e.touches.length === 2 && self.initialDistance > 0) {
+                        else if (e.touches.length === 2 && this.initialDistance > 0) {
                              var dx = e.touches[0].clientX - e.touches[1].clientX;
                              var dy = e.touches[0].clientY - e.touches[1].clientY;
-                             var scaleFactor = Math.sqrt(dx*dx + dy*dy) / self.initialDistance;
-                             var s = self.initialScaleVector.x * scaleFactor;
-                             s = Math.min(Math.max(s, 0.005), 0.35);
-                             self.model.object3D.scale.set(s, s, s);
+                             var currentDistance = Math.sqrt(dx * dx + dy * dy);
+                             var scaleFactor = currentDistance / this.initialDistance;
+
+                             var newX = this.initialScaleVector.x * scaleFactor;
+                             var newY = this.initialScaleVector.y * scaleFactor;
+                             var newZ = this.initialScaleVector.z * scaleFactor;
+
+                             const minScale = 0.005; 
+                             const maxScale = 0.35;  
+
+                             newX = Math.min(Math.max(newX, minScale), maxScale);
+                             newY = Math.min(Math.max(newY, minScale), maxScale);
+                             newZ = Math.min(Math.max(newZ, minScale), maxScale);
+
+                             this.model.object3D.scale.set(newX, newY, newZ);
                         }
                     });
                 }
@@ -108,58 +135,69 @@
 
             AFRAME.registerComponent('fix-video-size', {
                 init: function () {
-                    var vid = document.querySelector("#vid");
-                    var el = this.el; 
-                    var resize = () => {
-                        if (vid.videoWidth > 0) {
-                            var ar = vid.videoHeight / vid.videoWidth;
-                            var sf = (window.innerHeight > window.innerWidth) ? 3.1 : 5; 
-                            el.setAttribute('width', sf); el.setAttribute('height', ar * sf);
+                    var videoEl = document.querySelector("#vid");
+                    var planeEl = this.el; 
+                    
+                    var applySize = function() {
+                        if (videoEl.videoWidth > 0 && videoEl.videoHeight > 0) {
+                            var aspectRatio = videoEl.videoHeight / videoEl.videoWidth;
+                            var isPortrait = window.innerHeight > window.innerWidth;
+                            
+                            var scaleFactor = isPortrait ? 3.1 : 5; 
+                            
+                            planeEl.setAttribute('width', scaleFactor); 
+                            planeEl.setAttribute('height', aspectRatio * scaleFactor);
                         }
                     };
-                    vid.addEventListener('loadedmetadata', resize);
-                    window.addEventListener('resize', resize);
-                    setTimeout(resize, 1000); // Intento extra
+                    videoEl.addEventListener('loadedmetadata', applySize);
+                    if (videoEl.readyState >= 1) applySize();
+                    window.addEventListener('resize', applySize);
                 }
             });
+
+            window.addEventListener('arjs-video-loaded', function(e) {
+                setTimeout(() => { document.body.classList.add('arjs-ready'); }, 1000);
+            });
+            // Fallback por si el evento no dispara
+            setTimeout(() => { document.body.classList.add('arjs-ready'); }, 6000);
         </script>
     </head>
 
     <body>
-        <div id="splash-screen">
-            <img src="assets/logo.png" alt="Logo">
-            <p>Iniciando cámara...</p>
-        </div>
+        <div id="splash-screen"><img src="assets/logo.png" alt="Cargando Bhastian AR..."></div>
 
-        <a href="https://wa.me/593983088889?text=Hola..." target="_blank" id="whatsapp-button">
-           <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp">
+        <a href="https://wa.me/593983088889?text=Hola%20Bhastian,%20vi%20su%20experiencia%20AR%20y%20me%20interesa." 
+           target="_blank" 
+           id="whatsapp-button">
+           <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp Icon">
         </a>
 
         <a-scene
-            draco-loader-config
             master-controller
             vr-mode-ui="enabled: false"
             loading-screen="enabled: false;"
             arjs='sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;'
-            renderer="logarithmicDepthBuffer: true; colorManagement: true; alpha: true;" 
+            renderer="logarithmicDepthBuffer: true; colorManagement: true; antialias: true;" 
             id="scene" 
             embedded 
         >
             <a-assets>
-                <video id="vid" src="assets/asset.mp4" preload="auto" loop crossorigin="anonymous" playsinline webkit-playsinline></video>
-                <a-asset-item id="miModelo" src="assets/mi-modelo.glb"></a-asset-item>
+                <video id="vid" src="assets/asset.mp4" preload="auto" loop crossorigin="anonymous" webkit-playsinline autoplay playsinline></video>
+                <a-asset-item id="miModelo" src="assets/FIMOLA-v1.glb"></a-asset-item>
             </a-assets>
 
             <a-entity light="type: ambient; intensity: 1.2; color: #ffffff"></a-entity>
+            
             <a-entity light="type: directional; intensity: 1.5" position="2 4 4"></a-entity>
 
             <a-entity camera>
                 <a-entity id="hud-container" visible="false" position="0 0 -6">
+                    
                     <a-video
                         src="#vid"
                         fix-video-size
                         position="0 1.5 -2" 
-                        material="shader: flat; src: #vid; transparent: true; depthWrite: false;"
+                        material="shader: flat; src: #vid; depthWrite: false;"
                     ></a-video>
 
                     <a-entity
@@ -170,6 +208,7 @@
                         rotation="0 0 0" 
                         animation-mixer="loop: repeat"
                     ></a-entity>
+
                 </a-entity>
             </a-entity>
 
@@ -177,21 +216,5 @@
             </a-marker>
 
         </a-scene>
-
-        <script>
-            // Este script espera 4 segundos y DESTRUYE la pantalla de carga
-            // independientemente de si AR.js avisó o no.
-            window.onload = function() {
-                setTimeout(function() {
-                    var splash = document.getElementById('splash-screen');
-                    if (splash) {
-                        splash.style.opacity = '0';
-                        setTimeout(() => { 
-                            splash.style.display = 'none'; 
-                        }, 500); // Espera que termine la transición de opacidad
-                    }
-                }, 4000); // 4 segundos de espera máxima
-            };
-        </script>
     </body>
 </html>
