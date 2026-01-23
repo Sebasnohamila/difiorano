@@ -3,24 +3,15 @@
     <head>
         <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
         
-        <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+        <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
         
         <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
         
-        <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.0.0/dist/aframe-extras.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
 
         <style>
             body { margin: 0; overflow: hidden; touch-action: none; font-family: Arial, sans-serif;}
             
-            #splash-screen {
-                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-                background-color: white; z-index: 9999;
-                display: flex; justify-content: center; align-items: center;
-                transition: opacity 1s ease-out;
-            }
-            #splash-screen img { max-width: 60%; height: auto; }
-            .arjs-ready #splash-screen { opacity: 0; pointer-events: none; }
-
             /* ESTILOS DEL BOTÓN DE WHATSAPP */
             #whatsapp-button {
                 display: none; 
@@ -45,6 +36,10 @@
         </style>
 
         <script>
+            // Configuración manual del decoder de Draco por seguridad
+            // A-Frame 1.3.0 suele hacerlo automático, pero esto asegura que encuentre los archivos.
+            AFRAME.scenes[0]?.systems.gltf-model.dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
+
             AFRAME.registerComponent('master-controller', {
                 init: function () {
                     this.marker = document.querySelector("#markerA");
@@ -69,13 +64,12 @@
                         this.waButton.style.display = "block"; 
                         
                         this.vid.play();
-                        // Nota: En versiones nuevas de extras, a veces el animation-mixer ya arranca solo si está en el HTML
                         if (this.model) this.model.setAttribute('animation-mixer', 'timeScale: 1');
                     });
-
+                    
+                    // --- GESTOS TÁCTILES (Igual que antes) ---
                     window.addEventListener('touchstart', (e) => {
                         if (!this.isUnlocked) return;
-
                         if(e.touches.length === 1) {
                             this.startX = e.touches[0].clientX;
                             this.startY = e.touches[0].clientY;
@@ -89,25 +83,18 @@
 
                     window.addEventListener('touchmove', (e) => {
                         if (!this.isUnlocked) return;
-                        
                         if(e.touches.length === 1) {
                             var deltaX = e.touches[0].clientX - this.startX;
                             var deltaY = e.touches[0].clientY - this.startY;
-
                             this.startX = e.touches[0].clientX;
                             this.startY = e.touches[0].clientY;
 
-                            // --- ROTACIÓN Y (Horizontal) ---
                             var newRotationY = this.model.object3D.rotation.y + (deltaX * 0.01);
-                            const minY = -0.8;
-                            const maxY = 0.8;
+                            const minY = -0.8; const maxY = 0.8;
                             this.model.object3D.rotation.y = Math.min(Math.max(newRotationY, minY), maxY);
 
-
-                            // --- ROTACIÓN X (Vertical) ---
                             var newRotationX = this.model.object3D.rotation.x + (deltaY * 0.01);
-                            const minX = 0.0; 
-                            const maxX = 0.8;
+                            const minX = 0.0; const maxX = 0.8;
                             this.model.object3D.rotation.x = Math.min(Math.max(newRotationX, minX), maxX);
                         } 
                         else if (e.touches.length === 2 && this.initialDistance > 0) {
@@ -120,14 +107,12 @@
                              var newY = this.initialScaleVector.y * scaleFactor;
                              var newZ = this.initialScaleVector.z * scaleFactor;
 
-                             const minScale = 0.005; 
-                             const maxScale = 0.35;  
-
-                             newX = Math.min(Math.max(newX, minScale), maxScale);
-                             newY = Math.min(Math.max(newY, minScale), maxScale);
-                             newZ = Math.min(Math.max(newZ, minScale), maxScale);
-
-                             this.model.object3D.scale.set(newX, newY, newZ);
+                             const minScale = 0.005; const maxScale = 0.35;  
+                             this.model.object3D.scale.set(
+                                 Math.min(Math.max(newX, minScale), maxScale),
+                                 Math.min(Math.max(newY, minScale), maxScale),
+                                 Math.min(Math.max(newZ, minScale), maxScale)
+                             );
                         }
                     });
                 }
@@ -137,14 +122,11 @@
                 init: function () {
                     var videoEl = document.querySelector("#vid");
                     var planeEl = this.el; 
-                    
                     var applySize = function() {
                         if (videoEl.videoWidth > 0 && videoEl.videoHeight > 0) {
                             var aspectRatio = videoEl.videoHeight / videoEl.videoWidth;
                             var isPortrait = window.innerHeight > window.innerWidth;
-                            
                             var scaleFactor = isPortrait ? 3.1 : 5; 
-                            
                             planeEl.setAttribute('width', scaleFactor); 
                             planeEl.setAttribute('height', aspectRatio * scaleFactor);
                         }
@@ -154,18 +136,10 @@
                     window.addEventListener('resize', applySize);
                 }
             });
-
-            window.addEventListener('arjs-video-loaded', function(e) {
-                setTimeout(() => { document.body.classList.add('arjs-ready'); }, 1000);
-            });
-            // Fallback por si el evento no dispara
-            setTimeout(() => { document.body.classList.add('arjs-ready'); }, 6000);
         </script>
     </head>
 
-    <body>
-        <div id="splash-screen"><img src="assets/logo.png" alt="Cargando Bhastian AR..."></div>
-
+    <body style="margin: 0; overflow: hidden;">
         <a href="https://wa.me/593983088889?text=Hola%20Bhastian,%20vi%20su%20experiencia%20AR%20y%20me%20interesa." 
            target="_blank" 
            id="whatsapp-button">
@@ -176,23 +150,21 @@
             master-controller
             vr-mode-ui="enabled: false"
             loading-screen="enabled: false;"
-            arjs='sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;'
-            renderer="logarithmicDepthBuffer: true; colorManagement: true; antialias: true;" 
+            arjs='sourceType: webcam; debugUIEnabled: false;'
+            renderer="logarithmicDepthBuffer: true; colorManagement: true;" 
             id="scene" 
             embedded 
         >
             <a-assets>
                 <video id="vid" src="assets/asset.mp4" preload="auto" loop crossorigin="anonymous" webkit-playsinline autoplay playsinline></video>
-                <a-asset-item id="miModelo" src="assets/FIMOLA-v1.glb"></a-asset-item>
+                <a-asset-item id="miModelo" src="assets/mi-modelo.glb"></a-asset-item>
             </a-assets>
 
             <a-entity light="type: ambient; intensity: 1.2; color: #ffffff"></a-entity>
-            
             <a-entity light="type: directional; intensity: 1.5" position="2 4 4"></a-entity>
 
             <a-entity camera>
                 <a-entity id="hud-container" visible="false" position="0 0 -6">
-                    
                     <a-video
                         src="#vid"
                         fix-video-size
@@ -208,7 +180,6 @@
                         rotation="0 0 0" 
                         animation-mixer="loop: repeat"
                     ></a-entity>
-
                 </a-entity>
             </a-entity>
 
