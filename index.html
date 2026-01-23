@@ -3,9 +3,11 @@
     <head>
         <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
         
-        <script src="https://aframe.io/releases/1.0.4/aframe.min.js"></script>
+        <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+        
         <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
-        <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
+        
+        <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.0.0/dist/aframe-extras.min.js"></script>
 
         <style>
             body { margin: 0; overflow: hidden; touch-action: none; font-family: Arial, sans-serif;}
@@ -67,6 +69,7 @@
                         this.waButton.style.display = "block"; 
                         
                         this.vid.play();
+                        // Nota: En versiones nuevas de extras, a veces el animation-mixer ya arranca solo si está en el HTML
                         if (this.model) this.model.setAttribute('animation-mixer', 'timeScale: 1');
                     });
 
@@ -94,21 +97,15 @@
                             this.startX = e.touches[0].clientX;
                             this.startY = e.touches[0].clientY;
 
-                            // --- CAMBIO NUEVO: RESTRICCIÓN HORIZONTAL (EJE Y) ---
-                            // Esto evita que se vea la parte de atrás (espalda)
+                            // --- ROTACIÓN Y (Horizontal) ---
                             var newRotationY = this.model.object3D.rotation.y + (deltaX * 0.01);
-                            
-                            // LÍMITES Y: -0.8 (Izq) a 0.8 (Der) -> Aprox 45 grados a cada lado
                             const minY = -0.8;
                             const maxY = 0.8;
                             this.model.object3D.rotation.y = Math.min(Math.max(newRotationY, minY), maxY);
 
 
-                            // --- RESTRICCIÓN VERTICAL (EJE X) ---
-                            // Esto evita que se vea la parte inferior (panza)
+                            // --- ROTACIÓN X (Vertical) ---
                             var newRotationX = this.model.object3D.rotation.x + (deltaY * 0.01);
-                            
-                            // LÍMITES X: 0.0 (Horizonte) a 0.8 (Arriba)
                             const minX = 0.0; 
                             const maxX = 0.8;
                             this.model.object3D.rotation.x = Math.min(Math.max(newRotationX, minX), maxX);
@@ -161,6 +158,7 @@
             window.addEventListener('arjs-video-loaded', function(e) {
                 setTimeout(() => { document.body.classList.add('arjs-ready'); }, 1000);
             });
+            // Fallback por si el evento no dispara
             setTimeout(() => { document.body.classList.add('arjs-ready'); }, 6000);
         </script>
     </head>
@@ -184,12 +182,13 @@
             embedded 
         >
             <a-assets>
-                <video id="vid" src="assets/asset.mp4" preload="auto" loop crossorigin webkit-playsinline autoplay playsinline></video>
+                <video id="vid" src="assets/asset.mp4" preload="auto" loop crossorigin="anonymous" webkit-playsinline autoplay playsinline></video>
                 <a-asset-item id="miModelo" src="assets/FIMOLA-v1.glb"></a-asset-item>
             </a-assets>
 
             <a-entity light="type: ambient; intensity: 1.2; color: #ffffff"></a-entity>
-            <a-entity light="type: directional; intensity: 1.5; position="2 4 4"></a-entity>
+            
+            <a-entity light="type: directional; intensity: 1.5" position="2 4 4"></a-entity>
 
             <a-entity camera>
                 <a-entity id="hud-container" visible="false" position="0 0 -6">
