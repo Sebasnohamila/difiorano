@@ -1,2 +1,0 @@
-# difiorano
-PROYECTO REALIDAD AUMENTADA
