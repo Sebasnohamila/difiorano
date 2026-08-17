@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>NOVA — Futurewear</title>
+  <meta name="description" content="Tienda de ropa futurista y streetwear.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="ambient ambient-a"></div>
+  <div class="ambient ambient-b"></div>
+
+  <header class="topbar">
+    <a class="brand" href="#home">NOVA<span>.</span></a>
+    <nav>
+      <a href="#home">Inicio</a>
+      <a href="#collection">Colección</a>
+      <a href="#featured">Destacados</a>
+      <a href="#about">Nosotros</a>
+    </nav>
+    <button class="icon-btn" aria-label="Abrir menú" id="menuBtn">☰</button>
+  </header>
+
+  <main id="home">
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">HIGH END / FUTURISTIC COLLECTION</p>
+        <h1>THE NEXT<br><span>GENERATION</span></h1>
+        <p class="hero-text">Diseños contemporáneos, siluetas técnicas y detalles pensados para una nueva generación.</p>
+        <a class="primary-btn" href="#collection">EXPLORAR COLECCIÓN <span>→</span></a>
+      </div>
+      <div class="hero-stage">
+        <div class="scanline"></div>
+        <div class="orb"></div>
+        <div class="product-ghost">NOVA<br><small>FUTUREWEAR</small></div>
+        <div class="hero-ring"></div>
+      </div>
+      <div class="hero-meta">
+        <span>01</span>
+        <span>SCROLL TO EXPLORE</span>
+        <span>2026</span>
+      </div>
+    </section>
+
+    <section id="collection" class="collection-section">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">SHOP / COLLECTION</p>
+          <h2>Selecciona una pieza</h2>
+        </div>
+        <div class="controls">
+          <button class="arrow" id="prev" aria-label="Producto anterior">←</button>
+          <button class="arrow" id="next" aria-label="Producto siguiente">→</button>
+        </div>
+      </div>
+
+      <div class="product-slider" id="slider" tabindex="0" aria-label="Productos">
+        <!-- PRODUCTO 01 -->
+        <article class="product-card active">
+          <div class="product-visual jacket">
+            <div class="product-label">01 / 04</div>
+            <div class="fake-jacket">
+              <div class="hood"></div>
+              <div class="body"></div>
+              <div class="sleeve left"></div>
+              <div class="sleeve right"></div>
+              <div class="zip"></div>
+              <div class="tech-line l1"></div>
+              <div class="tech-line l2"></div>
+              <div class="tech-line l3"></div>
+            </div>
+            <div class="visual-glow"></div>
+          </div>
+          <div class="product-info">
+            <p class="eyebrow">NEXT GEN / 01</p>
+            <h3>VECTOR SHELL</h3>
+            <p class="price">$89.00</p>
+            <p class="description">Chaqueta técnica de corte moderno, ligera y diseñada para destacar. Detalles reflectivos, capucha estructurada y líneas inspiradas en arquitectura digital.</p>
+            <div class="spec-grid">
+              <div><span>MATERIAL</span><strong>Technical nylon</strong></div>
+              <div><span>FIT</span><strong>Regular / Urban</strong></div>
+              <div><span>COLORS</span><strong>Black · Silver</strong></div>
+              <div><span>SIZES</span><strong>S · M · L · XL</strong></div>
+            </div>
+            <div class="product-actions">
+              <button class="size-btn">S</button><button class="size-btn">M</button><button class="size-btn">L</button><button class="size-btn">XL</button>
+              <button class="buy-btn">AÑADIR AL CARRITO</button>
+            </div>
+          </div>
+        </article>
+
+        <!-- PRODUCTO 02 -->
+        <article class="product-card">
+          <div class="product-visual hoodie">
+            <div class="product-label">02 / 04</div>
+            <div class="fake-hoodie">
+              <div class="hood"></div><div class="torso"></div>
+              <div class="arm left"></div><div class="arm right"></div>
+              <div class="hoodie-line"></div>
+            </div>
+            <div class="visual-glow"></div>
+          </div>
+          <div class="product-info">
+            <p class="eyebrow">CORE / 02</p>
+            <h3>VOID HOODIE</h3>
+            <p class="price">$59.00</p>
+            <p class="description">Hoodie premium de estética minimalista con construcción pesada y detalles de alto contraste.</p>
+            <div class="spec-grid">
+              <div><span>MATERIAL</span><strong>Premium cotton</strong></div>
+              <div><span>FIT</span><strong>Oversized</strong></div>
+              <div><span>COLORS</span><strong>Black · Graphite</strong></div>
+              <div><span>SIZES</span><strong>S · M · L · XL</strong></div>
+            </div>
+            <div class="product-actions">
+              <button class="size-btn">S</button><button class="size-btn">M</button><button class="size-btn">L</button><button class="size-btn">XL</button>
+              <button class="buy-btn">AÑADIR AL CARRITO</button>
+            </div>
+          </div>
+        </article>
+
+        <!-- PRODUCTO 03 -->
+        <article class="product-card">
+          <div class="product-visual tee">
+            <div class="product-label">03 / 04</div>
+            <div class="fake-tee"><div class="tee-body"></div><div class="tee-left"></div><div class="tee-right"></div><div class="tee-print">N</div></div>
+            <div class="visual-glow"></div>
+          </div>
+          <div class="product-info">
+            <p class="eyebrow">ESSENTIAL / 03</p>
+            <h3>NEON TEE</h3>
+            <p class="price">$29.00</p>
+            <p class="description">Camiseta de algodón con gráfica limpia y detalles inspirados en interfaces futuristas.</p>
+            <div class="spec-grid">
+              <div><span>MATERIAL</span><strong>100% cotton</strong></div>
+              <div><span>FIT</span><strong>Regular</strong></div>
+              <div><span>COLORS</span><strong>White · Black</strong></div>
+              <div><span>SIZES</span><strong>S · M · L · XL</strong></div>
+            </div>
+            <div class="product-actions">
+              <button class="size-btn">S</button><button class="size-btn">M</button><button class="size-btn">L</button><button class="size-btn">XL</button>
+              <button class="buy-btn">AÑADIR AL CARRITO</button>
+            </div>
+          </div>
+        </article>
+
+        <!-- PRODUCTO 04 -->
+        <article class="product-card">
+          <div class="product-visual pants">
+            <div class="product-label">04 / 04</div>
+            <div class="fake-pants"><div class="waist"></div><div class="leg one"></div><div class="leg two"></div><div class="pant-line"></div></div>
+            <div class="visual-glow"></div>
+          </div>
+          <div class="product-info">
+            <p class="eyebrow">TECH / 04</p>
+            <h3>PHANTOM CARGO</h3>
+            <p class="price">$69.00</p>
+            <p class="description">Cargo urbano con bolsillos funcionales, corte relajado y estética técnica.</p>
+            <div class="spec-grid">
+              <div><span>MATERIAL</span><strong>Ripstop fabric</strong></div>
+              <div><span>FIT</span><strong>Relaxed</strong></div>
+              <div><span>COLORS</span><strong>Black · Olive</strong></div>
+              <div><span>SIZES</span><strong>28–36</strong></div>
+            </div>
+            <div class="product-actions">
+              <button class="size-btn">28</button><button class="size-btn">30</button><button class="size-btn">32</button><button class="size-btn">34</button>
+              <button class="buy-btn">AÑADIR AL CARRITO</button>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section id="featured" class="manifesto">
+      <p class="eyebrow">DESIGNED FOR TOMORROW</p>
+      <h2>Ropa que parece<br><span>del futuro.</span></h2>
+      <div class="manifesto-grid">
+        <div><strong>01</strong><p>Diseño</p><small>Siluetas contemporáneas y detalles técnicos.</small></div>
+        <div><strong>02</strong><p>Calidad</p><small>Materiales seleccionados para uso diario.</small></div>
+        <div><strong>03</strong><p>Identidad</p><small>Una estética propia, limpia y reconocible.</small></div>
+      </div>
+    </section>
+
+    <section id="about" class="footer-section">
+      <div>
+        <p class="eyebrow">NOVA / 2026</p>
+        <h2>WELCOME TO<br>THE NEW ERA.</h2>
+      </div>
+      <div class="footer-links">
+        <a href="#collection">Shop</a>
+        <a href="#featured">Colección</a>
+        <a href="mailto:tuemail@ejemplo.com">Contacto</a>
+      </div>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
